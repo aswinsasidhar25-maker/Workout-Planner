@@ -742,6 +742,31 @@ export const motivationalQuotes = [
   "Results happen over time, not overnight. Work hard, stay consistent.",
 ]
 
+export const badgeDefinitions = [
+  { id: 'first_workout', name: 'First Step', icon: '🎯', description: 'Complete your first workout', check: (s) => Object.keys(s.workoutLog || {}).length >= 1 },
+  { id: 'three_workouts', name: 'Getting Started', icon: '🌱', description: 'Complete 3 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 3 },
+  { id: 'ten_workouts', name: 'Dedicated', icon: '💪', description: 'Complete 10 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 10 },
+  { id: 'twentyfive_workouts', name: 'Powerhouse', icon: '🔥', description: 'Complete 25 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 25 },
+  { id: 'streak_3', name: 'On a Roll', icon: '⚡', description: '3-day workout streak', check: (s) => (s.streak?.current >= 3 || s.streak?.longest >= 3) },
+  { id: 'streak_7', name: 'Week Warrior', icon: '🏆', description: '7-day workout streak', check: (s) => (s.streak?.current >= 7 || s.streak?.longest >= 7) },
+  { id: 'five_days', name: 'Full Timer', icon: '📅', description: 'Work out on 5 different days', check: (s) => Object.keys(s.workoutLog || {}).length >= 5 },
+]
+
+export const dailyTips = [
+  "Try adding 5% more weight to your main lifts this week.",
+  "Drink a glass of water between every set today.",
+  "Focus on form over speed — slow reps build more muscle.",
+  "Try a 5-minute stretch routine after your workout.",
+  "Challenge yourself: add one extra set to your favorite exercise.",
+  "Breathe out on the effort, breathe in on the release.",
+  "Swap one exercise for something new to keep things fresh.",
+  "Set a timer for rest periods to stay focused.",
+  "Fuel up with protein within 30 minutes of finishing.",
+  "Visualize completing each set before you start lifting.",
+  "Track your weights today — future you will thank you.",
+  "Try a superset: pair two exercises with no rest between.",
+]
+
 export const defaultSplits = {
   build_muscle: {
     name: 'Push/Pull/Legs',

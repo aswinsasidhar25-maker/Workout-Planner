@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Lightbulb, Award, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, weekDays, exercises, motivationalQuotes } from '../data/exercises'
+import { goals, weekDays, exercises, motivationalQuotes, badgeDefinitions, dailyTips } from '../data/exercises'
 
 export default function Dashboard() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
   const { profile, workoutPlan, workoutLog } = state
 
   const today = weekDays[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]
@@ -45,10 +45,42 @@ export default function Dashboard() {
 
   const quote = useMemo(() => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)], [])
 
+  const dailyTip = useMemo(() => {
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    return dailyTips[dayOfYear % dailyTips.length]
+  }, [])
+
   const todayProgress = stats.totalSets > 0 ? Math.round((stats.totalSetsCompleted / stats.totalSets) * 100) : 0
+
+  const streak = state.streak || { current: 0, longest: 0 }
+  const unlockedBadges = state.unlockedBadges || []
+  const newBadge = state.newBadge
+  const newBadgeDef = newBadge ? badgeDefinitions.find(b => b.id === newBadge) : null
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Badge unlock toast */}
+      <AnimatePresence>
+        {newBadgeDef && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-surface border border-accent/40 rounded-2xl p-5 shadow-2xl shadow-accent/20 flex items-center gap-4 max-w-sm"
+          >
+            <span className="text-4xl">{newBadgeDef.icon}</span>
+            <div className="flex-1">
+              <p className="text-xs text-accent font-semibold uppercase tracking-wider">Badge Unlocked!</p>
+              <p className="text-lg font-bold text-text-primary">{newBadgeDef.name}</p>
+              <p className="text-xs text-text-secondary">{newBadgeDef.description}</p>
+            </div>
+            <button onClick={() => dispatch({ type: 'DISMISS_BADGE' })} className="text-text-muted hover:text-text-primary">
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Greeting */}
       <div>
         <h1 className="text-3xl font-black text-text-primary">
@@ -57,6 +89,26 @@ export default function Dashboard() {
         <p className="text-text-secondary mt-1">Let's crush today's workout.</p>
       </div>
 
+      {/* Streak tracker */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl px-5 py-4"
+      >
+        <Flame className={`w-7 h-7 ${streak.current > 0 ? 'text-orange-400' : 'text-text-muted'}`} />
+        {streak.current > 0 ? (
+          <>
+            <span className="text-3xl font-black text-orange-400">{streak.current}</span>
+            <span className="text-sm text-text-secondary">day streak</span>
+            {streak.current >= streak.longest && streak.current > 1 && (
+              <span className="ml-auto text-xs bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full font-medium">Personal best!</span>
+            )}
+          </>
+        ) : (
+          <span className="text-sm text-text-secondary">Start your streak today — log a workout!</span>
+        )}
+      </motion.div>
+
       {/* Motivational quote */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -64,6 +116,20 @@ export default function Dashboard() {
         className="bg-gradient-to-r from-primary/10 via-surface to-accent/10 rounded-2xl p-5 border border-primary/20"
       >
         <p className="text-sm text-text-secondary italic">"{quote}"</p>
+      </motion.div>
+
+      {/* Daily tip banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex items-start gap-3 bg-surface rounded-2xl p-4 border-l-4 border-accent"
+      >
+        <Lightbulb className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+        <div>
+          <p className="text-xs text-accent font-semibold uppercase tracking-wider mb-1">Tip of the Day</p>
+          <p className="text-sm text-text-secondary">{dailyTip}</p>
+        </div>
       </motion.div>
 
       {/* Stats grid */}
@@ -88,6 +154,35 @@ export default function Dashboard() {
             <p className="text-xs text-text-muted">{stat.label}</p>
           </motion.div>
         ))}
+      </div>
+
+      {/* Achievements/Badges */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Award className="w-5 h-5 text-accent" />
+          <h3 className="text-lg font-bold text-text-primary">Achievements</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {badgeDefinitions.map(badge => {
+            const isUnlocked = unlockedBadges.includes(badge.id)
+            return (
+              <motion.div
+                key={badge.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`rounded-xl p-3 text-center border transition-all ${
+                  isUnlocked
+                    ? 'bg-accent/10 border-accent/30'
+                    : 'bg-surface border-surface-lighter opacity-50'
+                }`}
+              >
+                <span className={`text-2xl ${isUnlocked ? '' : 'grayscale'}`}>{badge.icon}</span>
+                <p className={`text-xs font-semibold mt-1 ${isUnlocked ? 'text-text-primary' : 'text-text-muted'}`}>{badge.name}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{badge.description}</p>
+              </motion.div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Today's workout */}

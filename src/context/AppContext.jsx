@@ -1,13 +1,72 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
-import { exercises, goals, defaultSplits } from '../data/exercises'
+import { exercises, goals, defaultSplits, badgeDefinitions } from '../data/exercises'
 
 const AppContext = createContext()
 
+function calculateStreak(workoutLog) {
+  if (!workoutLog || Object.keys(workoutLog).length === 0) {
+    return { current: 0, longest: 0 }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const dates = Object.keys(workoutLog).sort().reverse()
+  if (dates.length === 0) return { current: 0, longest: 0 }
+
+  const mostRecent = new Date(dates[0] + 'T00:00:00')
+  const diffDays = Math.floor((today - mostRecent) / (86400000))
+
+  if (diffDays > 1) return { current: 0, longest: 0 }
+
+  let current = 0
+  const checkDate = new Date(today)
+  if (diffDays === 1) checkDate.setDate(checkDate.getDate() - 1)
+
+  while (true) {
+    const dateStr = checkDate.toISOString().split('T')[0]
+    if (workoutLog[dateStr]) {
+      current++
+      checkDate.setDate(checkDate.getDate() - 1)
+    } else {
+      break
+    }
+  }
+
+  return { current, longest: current }
+}
+
+function checkBadges(state) {
+  const unlocked = state.unlockedBadges || []
+  const newlyUnlocked = []
+
+  for (const badge of badgeDefinitions) {
+    if (!unlocked.includes(badge.id) && badge.check(state)) {
+      newlyUnlocked.push(badge.id)
+    }
+  }
+
+  return newlyUnlocked
+}
+
 const getInitialState = () => {
-  const saved = localStorage.getItem('fitforge-state')
+  let saved = localStorage.getItem('zenfit-state')
+  if (!saved) {
+    saved = localStorage.getItem('fitforge-state')
+    if (saved) {
+      localStorage.setItem('zenfit-state', saved)
+      localStorage.removeItem('fitforge-state')
+    }
+  }
   if (saved) {
     try {
-      return JSON.parse(saved)
+      const parsed = JSON.parse(saved)
+      parsed.streak = calculateStreak(parsed.workoutLog || {})
+      if (!parsed.unlockedBadges) parsed.unlockedBadges = []
+      if (!parsed.newBadge) parsed.newBadge = null
+      const newBadges = checkBadges(parsed)
+      parsed.unlockedBadges = [...parsed.unlockedBadges, ...newBadges]
+      return parsed
     } catch {
       // fall through
     }
@@ -17,6 +76,9 @@ const getInitialState = () => {
     workoutPlan: {},
     workoutLog: {},
     customExercises: [],
+    streak: { current: 0, longest: 0 },
+    unlockedBadges: [],
+    newBadge: null,
   }
 }
 
@@ -107,7 +169,19 @@ function reducer(state, action) {
         exercises: logExercises,
         timestamp: Date.now(),
       })
-      return { ...state, workoutLog: log }
+      const streak = calculateStreak(log)
+      const oldLongest = state.streak?.longest || 0
+      streak.longest = Math.max(streak.current, oldLongest)
+      const newState = { ...state, workoutLog: log, streak }
+      const newBadges = checkBadges(newState)
+      if (newBadges.length > 0) {
+        newState.unlockedBadges = [...(state.unlockedBadges || []), ...newBadges]
+        newState.newBadge = newBadges[0]
+      }
+      return newState
+    }
+    case 'DISMISS_BADGE': {
+      return { ...state, newBadge: null }
     }
     case 'REPLACE_EXERCISE': {
       const { day, exerciseIndex, newExerciseId } = action.payload
@@ -161,7 +235,7 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, getInitialState)
 
   useEffect(() => {
-    localStorage.setItem('fitforge-state', JSON.stringify(state))
+    localStorage.setItem('zenfit-state', JSON.stringify(state))
   }, [state])
 
   return (
