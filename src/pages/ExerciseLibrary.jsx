@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, ChevronDown, Filter } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
-import ExerciseAnimation from '../components/ExerciseAnimation'
 
 export default function ExerciseLibrary() {
   const [search, setSearch] = useState('')
@@ -34,7 +33,7 @@ export default function ExerciseLibrary() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-black text-text-primary">Exercise Library</h1>
-        <p className="text-sm text-text-secondary">Browse {exercises.length} exercises with animated previews</p>
+        <p className="text-sm text-text-secondary">Browse {exercises.length} exercises</p>
       </div>
 
       {/* Search */}
@@ -77,8 +76,9 @@ export default function ExerciseLibrary() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${muscleFilter === '' ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>All</button>
                 {muscleGroups.map(mg => (
                   <button key={mg.id} onClick={() => setMuscleFilter(mg.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${muscleFilter === mg.id ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>
-                    {mg.icon} {mg.name}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${muscleFilter === mg.id ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>
+                    <img src={mg.image} alt="" className="w-4 h-4 rounded object-cover" />
+                    {mg.name}
                   </button>
                 ))}
               </div>
@@ -127,8 +127,8 @@ export default function ExerciseLibrary() {
               className="bg-surface rounded-2xl border border-surface-lighter p-4 text-left hover:border-primary/30 transition-all group"
             >
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                  {muscle?.icon || '💪'}
+                <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 group-hover:scale-110 transition-transform">
+                  <img src={muscle?.image} alt={muscle?.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text-primary truncate">{ex.name}</h3>
@@ -157,18 +157,24 @@ export default function ExerciseLibrary() {
               exit={{ y: 100, opacity: 0 }}
               className="bg-surface rounded-2xl border border-surface-lighter w-full max-w-lg max-h-[80vh] overflow-y-auto"
             >
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-text-primary">{selectedExercise.name}</h2>
-                  <button onClick={() => setSelectedExercise(null)} className="text-text-muted hover:text-text-primary">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+              {/* Exercise image header */}
+              <div className="relative h-40 overflow-hidden rounded-t-2xl">
+                <img
+                  src={muscleGroups.find(m => m.id === selectedExercise.muscle)?.image}
+                  alt={selectedExercise.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent" />
+                <button
+                  onClick={() => setSelectedExercise(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-                {/* Animation */}
-                <div className="mb-4">
-                  <ExerciseAnimation animationType={selectedExercise.animationType} />
-                </div>
+              <div className="p-5 -mt-6 relative">
+                <h2 className="text-xl font-bold text-text-primary mb-3">{selectedExercise.name}</h2>
 
                 <div className="flex gap-2 mb-4 flex-wrap">
                   <span className={`text-xs px-3 py-1 rounded-full font-medium border ${difficultyColors[selectedExercise.difficulty]}`}>
@@ -200,7 +206,7 @@ export default function ExerciseLibrary() {
                   <ul className="space-y-1.5">
                     {selectedExercise.tips.map((tip, i) => (
                       <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
-                        <span className="text-primary-light">•</span> {tip}
+                        <span className="text-primary-light">·</span> {tip}
                       </li>
                     ))}
                   </ul>

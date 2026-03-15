@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Plus, Save, CheckCircle2, Star } from 'lucide-react'
+import { RefreshCw, Plus, Save, CheckCircle2, Star, Dumbbell, Calendar } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { weekDays, exercises as allExercises, muscleGroups } from '../data/exercises'
 import ExerciseCard from '../components/ExerciseCard'
@@ -84,7 +84,12 @@ export default function WorkoutPlan() {
               }`}
             >
               <p className="text-xs font-medium">{day.slice(0, 3)}</p>
-              <p className="text-lg mt-0.5">{plan?.isRest ? '😴' : '🏋️'}</p>
+              <div className="mt-1">
+                {plan?.isRest
+                  ? <Calendar className={`w-5 h-5 mx-auto ${selectedDay === day ? 'text-white/70' : 'text-text-muted'}`} />
+                  : <Dumbbell className={`w-5 h-5 mx-auto ${selectedDay === day ? 'text-white' : 'text-primary-light'}`} />
+                }
+              </div>
             </button>
           )
         })}
@@ -152,7 +157,9 @@ export default function WorkoutPlan() {
         </div>
       ) : dayPlan?.isRest ? (
         <div className="bg-surface rounded-2xl border border-surface-lighter p-8 text-center">
-          <p className="text-6xl mb-4">🧘</p>
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Calendar className="w-8 h-8 text-primary-light" />
+          </div>
           <h3 className="text-xl font-bold text-text-primary">Rest Day</h3>
           <p className="text-text-secondary mt-2">Your muscles grow during rest. Stay hydrated, stretch, and prepare for tomorrow's session.</p>
         </div>
@@ -179,9 +186,9 @@ export default function WorkoutPlan() {
               <motion.div
                 animate={{ rotate: [0, 10, -10, 10, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-6xl mb-4"
+                className="w-16 h-16 mx-auto rounded-2xl bg-accent/20 flex items-center justify-center mb-4"
               >
-                🎉
+                <Dumbbell className="w-8 h-8 text-accent" />
               </motion.div>
               <h2 className="text-2xl font-black text-text-primary mb-2">Workout Complete!</h2>
               <p className="text-text-secondary mb-6">Great job crushing it today. Keep the momentum going!</p>
@@ -239,34 +246,40 @@ export default function WorkoutPlan() {
                 <button
                   key={mg.id}
                   onClick={() => setAddFilter(mg.id)}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                     addFilter === mg.id ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'
                   }`}
                 >
-                  {mg.icon} {mg.name}
+                  <img src={mg.image} alt="" className="w-4 h-4 rounded object-cover" />
+                  {mg.name}
                 </button>
               ))}
             </div>
 
             {/* Exercise list */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {availableExercises.map(ex => (
-                <button
-                  key={ex.id}
-                  onClick={() => {
-                    dispatch({ type: 'ADD_EXERCISE_TO_DAY', payload: { day: selectedDay, exerciseId: ex.id } })
-                    setShowAddModal(false)
-                  }}
-                  className="w-full p-3 rounded-xl bg-surface-light border border-surface-lighter text-left hover:border-primary/30 transition-all flex items-center gap-3"
-                >
-                  <span className="text-xl">{muscleGroups.find(m => m.id === ex.muscle)?.icon}</span>
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">{ex.name}</p>
-                    <p className="text-xs text-text-muted">{ex.muscle} · {ex.difficulty} · {ex.equipment}</p>
-                  </div>
-                  <Plus className="w-4 h-4 text-text-muted ml-auto" />
-                </button>
-              ))}
+              {availableExercises.map(ex => {
+                const mg = muscleGroups.find(m => m.id === ex.muscle)
+                return (
+                  <button
+                    key={ex.id}
+                    onClick={() => {
+                      dispatch({ type: 'ADD_EXERCISE_TO_DAY', payload: { day: selectedDay, exerciseId: ex.id } })
+                      setShowAddModal(false)
+                    }}
+                    className="w-full p-3 rounded-xl bg-surface-light border border-surface-lighter text-left hover:border-primary/30 transition-all flex items-center gap-3"
+                  >
+                    <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                      <img src={mg?.image} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text-primary">{ex.name}</p>
+                      <p className="text-xs text-text-muted">{ex.muscle} · {ex.difficulty} · {ex.equipment}</p>
+                    </div>
+                    <Plus className="w-4 h-4 text-text-muted ml-auto" />
+                  </button>
+                )
+              })}
             </div>
           </motion.div>
         </div>

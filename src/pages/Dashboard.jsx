@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Lightbulb, Award, X } from 'lucide-react'
+import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Award, X, Trophy, Star, Medal } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, weekDays, exercises, motivationalQuotes, durationOptions, badgeDefinitions, dailyTips } from '../data/exercises'
+import { goals, weekDays, exercises, durationOptions, badgeDefinitions } from '../data/exercises'
 
 export default function Dashboard() {
   const { state, dispatch } = useApp()
@@ -44,19 +44,22 @@ export default function Dashboard() {
     return { totalWorkouts, thisWeek, totalSetsCompleted, totalSets, todayCalories }
   }, [workoutLog, todayPlan])
 
-  const quote = useMemo(() => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)], [])
-
-  const dailyTip = useMemo(() => {
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-    return dailyTips[dayOfYear % dailyTips.length]
-  }, [])
-
   const todayProgress = stats.totalSets > 0 ? Math.round((stats.totalSetsCompleted / stats.totalSets) * 100) : 0
 
   const streak = state.streak || { current: 0, longest: 0 }
   const unlockedBadges = state.unlockedBadges || []
   const newBadge = state.newBadge
   const newBadgeDef = newBadge ? badgeDefinitions.find(b => b.id === newBadge) : null
+
+  const badgeIcons = {
+    first_workout: <Star className="w-6 h-6" />,
+    three_workouts: <Flame className="w-6 h-6" />,
+    ten_workouts: <Trophy className="w-6 h-6" />,
+    twentyfive_workouts: <Award className="w-6 h-6" />,
+    streak_3: <Zap className="w-6 h-6" />,
+    streak_7: <Medal className="w-6 h-6" />,
+    five_days: <Calendar className="w-6 h-6" />,
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -69,7 +72,9 @@ export default function Dashboard() {
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
             className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-surface border border-accent/40 rounded-2xl p-5 shadow-2xl shadow-accent/20 flex items-center gap-4 max-w-sm"
           >
-            <span className="text-4xl">{newBadgeDef.icon}</span>
+            <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center text-accent">
+              {badgeIcons[newBadgeDef.id] || <Award className="w-6 h-6" />}
+            </div>
             <div className="flex-1">
               <p className="text-xs text-accent font-semibold uppercase tracking-wider">Badge Unlocked!</p>
               <p className="text-lg font-bold text-text-primary">{newBadgeDef.name}</p>
@@ -108,29 +113,6 @@ export default function Dashboard() {
         ) : (
           <span className="text-sm text-text-secondary">Start your streak today — log a workout!</span>
         )}
-      </motion.div>
-
-      {/* Motivational quote */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-primary/10 via-surface to-accent/10 rounded-2xl p-5 border border-primary/20"
-      >
-        <p className="text-sm text-text-secondary italic">"{quote}"</p>
-      </motion.div>
-
-      {/* Daily tip banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex items-start gap-3 bg-surface rounded-2xl p-4 border-l-4 border-accent"
-      >
-        <Lightbulb className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-        <div>
-          <p className="text-xs text-accent font-semibold uppercase tracking-wider mb-1">Tip of the Day</p>
-          <p className="text-sm text-text-secondary">{dailyTip}</p>
-        </div>
       </motion.div>
 
       {/* Stats grid */}
@@ -177,7 +159,9 @@ export default function Dashboard() {
                     : 'bg-surface border-surface-lighter opacity-50'
                 }`}
               >
-                <span className={`text-2xl ${isUnlocked ? '' : 'grayscale'}`}>{badge.icon}</span>
+                <div className={`w-8 h-8 mx-auto rounded-lg flex items-center justify-center mb-1 ${isUnlocked ? 'text-accent' : 'text-text-muted'}`}>
+                  {badgeIcons[badge.id] || <Award className="w-5 h-5" />}
+                </div>
                 <p className={`text-xs font-semibold mt-1 ${isUnlocked ? 'text-text-primary' : 'text-text-muted'}`}>{badge.name}</p>
                 <p className="text-[10px] text-text-muted mt-0.5">{badge.description}</p>
               </motion.div>
@@ -252,7 +236,9 @@ export default function Dashboard() {
         ) : (
           <div className="px-5 pb-5">
             <div className="bg-surface-light rounded-xl p-6 text-center">
-              <p className="text-4xl mb-3">🧘</p>
+              <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                <Calendar className="w-6 h-6 text-primary-light" />
+              </div>
               <p className="text-text-secondary">Rest day — recover and come back stronger!</p>
             </div>
           </div>
@@ -278,7 +264,9 @@ export default function Dashboard() {
                 }`}
               >
                 <p className="text-xs font-medium text-text-muted">{day.slice(0, 3)}</p>
-                <p className="text-lg mt-1">{isRest ? '😴' : '🏋️'}</p>
+                <div className={`w-8 h-8 mx-auto mt-1 rounded-lg flex items-center justify-center ${isRest ? 'bg-surface-lighter' : 'bg-primary/10'}`}>
+                  {isRest ? <Calendar className="w-4 h-4 text-text-muted" /> : <Dumbbell className="w-4 h-4 text-primary-light" />}
+                </div>
                 <p className="text-[10px] text-text-muted mt-1 truncate">{plan?.name || '-'}</p>
               </Link>
             )
@@ -286,31 +274,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Goals info - scrollable cards for multiple goals */}
+      {/* Goals info */}
       <div>
         <h3 className="text-lg font-bold text-text-primary mb-3">Your Goals</h3>
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           {goalConfigs.map(gc => (
-            <div key={gc.id} className={`bg-gradient-to-br ${gc.color} rounded-2xl p-5 text-white shrink-0 ${goalConfigs.length === 1 ? 'w-full' : 'w-72'}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">{gc.icon}</span>
-                <div>
-                  <p className="font-bold text-lg">{gc.name}</p>
-                  <p className="text-sm opacity-80">{gc.description}</p>
+            <div key={gc.id} className={`rounded-2xl overflow-hidden shrink-0 ${goalConfigs.length === 1 ? 'w-full' : 'w-72'}`}>
+              <div className="relative h-32">
+                <img src={gc.image} alt={gc.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute bottom-3 left-4">
+                  <p className="font-bold text-lg text-white">{gc.name}</p>
+                  <p className="text-sm text-white/70">{gc.description}</p>
                 </div>
               </div>
-              <div className="flex gap-3 mt-3">
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs opacity-70">Sets</p>
-                  <p className="font-bold">{gc.setsRange.join('-')}</p>
+              <div className={`bg-gradient-to-r ${gc.color} p-3 flex gap-3`}>
+                <div className="bg-white/10 rounded-xl px-3 py-2 flex-1 text-center">
+                  <p className="text-xs text-white/70">Sets</p>
+                  <p className="font-bold text-white">{gc.setsRange.join('-')}</p>
                 </div>
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs opacity-70">Reps</p>
-                  <p className="font-bold">{gc.repsRange.join('-')}</p>
+                <div className="bg-white/10 rounded-xl px-3 py-2 flex-1 text-center">
+                  <p className="text-xs text-white/70">Reps</p>
+                  <p className="font-bold text-white">{gc.repsRange.join('-')}</p>
                 </div>
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs opacity-70">Rest</p>
-                  <p className="font-bold">{gc.restSeconds}s</p>
+                <div className="bg-white/10 rounded-xl px-3 py-2 flex-1 text-center">
+                  <p className="text-xs text-white/70">Rest</p>
+                  <p className="font-bold text-white">{gc.restSeconds}s</p>
                 </div>
               </div>
             </div>

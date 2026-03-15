@@ -1,8 +1,6 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import { Dumbbell, Calendar, TrendingUp, User, Compass, Home } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { Dumbbell, Calendar, TrendingUp, User, Home } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { motivationalQuotes } from '../data/exercises'
-import { useState, useEffect } from 'react'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
@@ -14,12 +12,6 @@ const navItems = [
 
 export default function Layout({ children }) {
   const { state } = useApp()
-  const location = useLocation()
-  const [quote, setQuote] = useState('')
-
-  useEffect(() => {
-    setQuote(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)])
-  }, [location.pathname])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -37,11 +29,6 @@ export default function Layout({ children }) {
               <p className="text-[10px] text-text-muted uppercase tracking-widest">Balance & Strength</p>
             </div>
           </div>
-          {state.profile && (
-            <div className="hidden md:block text-right">
-              <p className="text-xs text-text-muted italic max-w-xs">"{quote}"</p>
-            </div>
-          )}
         </div>
       </header>
 

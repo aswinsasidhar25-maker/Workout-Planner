@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock } from 'lucide-react'
+import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, fitnessLevels, durationOptions } from '../data/exercises'
+import { goals, fitnessLevels, durationOptions, weekDays } from '../data/exercises'
 import { useNavigate } from 'react-router-dom'
 
 export default function Profile() {
@@ -12,6 +12,7 @@ export default function Profile() {
   const [showGoalChange, setShowGoalChange] = useState(false)
   const [showLevelChange, setShowLevelChange] = useState(false)
   const [showDurationChange, setShowDurationChange] = useState(false)
+  const [showDaysChange, setShowDaysChange] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const goalConfigs = goals.filter(g => (profile.goals || []).includes(g.id))
@@ -22,7 +23,7 @@ export default function Profile() {
     const newGoals = currentGoals.includes(goalId)
       ? currentGoals.filter(id => id !== goalId)
       : [...currentGoals, goalId]
-    if (newGoals.length === 0) return // Must have at least one goal
+    if (newGoals.length === 0) return
     dispatch({ type: 'SET_PROFILE', payload: { ...profile, goals: newGoals } })
   }
 
@@ -34,6 +35,16 @@ export default function Profile() {
   const handleDurationChange = (durationId) => {
     dispatch({ type: 'SET_PROFILE', payload: { ...profile, duration: durationId } })
     setShowDurationChange(false)
+  }
+
+  const handleDayToggle = (day) => {
+    const currentDays = profile.workoutDays || []
+    const newDays = currentDays.includes(day)
+      ? currentDays.filter(d => d !== day)
+      : [...currentDays, day]
+    if (newDays.length < 3) return
+    const sorted = weekDays.filter(d => newDays.includes(d))
+    dispatch({ type: 'SET_PROFILE', payload: { ...profile, workoutDays: sorted } })
   }
 
   const handleReset = () => {
@@ -53,8 +64,8 @@ export default function Profile() {
       <div className="bg-surface rounded-2xl border border-surface-lighter p-6 flex items-center gap-4">
         <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
           profile.gender === 'male' ? 'from-blue-500 to-indigo-600' : 'from-pink-500 to-rose-600'
-        } flex items-center justify-center text-3xl shadow-lg`}>
-          {profile.gender === 'male' ? '🙋‍♂️' : '🙋‍♀️'}
+        } flex items-center justify-center shadow-lg`}>
+          <Dumbbell className="w-7 h-7 text-white" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>
@@ -68,8 +79,8 @@ export default function Profile() {
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
               {goalConfigs.slice(0, 3).map(gc => (
-                <div key={gc.id} className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gc.color} flex items-center justify-center text-lg border-2 border-surface`}>
-                  {gc.icon}
+                <div key={gc.id} className="w-10 h-10 rounded-xl overflow-hidden border-2 border-surface">
+                  <img src={gc.image} alt={gc.name} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
@@ -103,7 +114,9 @@ export default function Profile() {
                       selected ? 'bg-primary/10 border border-primary' : 'bg-surface-light border border-transparent hover:border-primary/30'
                     }`}
                   >
-                    <span className="text-xl">{g.icon}</span>
+                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                      <img src={g.image} alt={g.name} className="w-full h-full object-cover" />
+                    </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-text-primary">{g.name}</p>
                       <p className="text-xs text-text-muted">{g.description}</p>
@@ -117,6 +130,60 @@ export default function Profile() {
                 )
               })}
               <p className="text-xs text-text-muted text-center mt-2">Changing goals will regenerate your workout plan</p>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Training Days */}
+      <div className="bg-surface rounded-2xl border border-surface-lighter overflow-hidden">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-text-muted">Training Days</p>
+              <p className="font-bold text-text-primary">{(profile.workoutDays || []).length} days/week</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowDaysChange(!showDaysChange)}
+            className="text-sm text-primary-light hover:text-primary transition-colors"
+          >
+            Change
+          </button>
+        </div>
+
+        {showDaysChange && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            className="overflow-hidden border-t border-surface-lighter"
+          >
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-2">
+                {weekDays.map(day => {
+                  const selected = (profile.workoutDays || []).includes(day)
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleDayToggle(day)}
+                      className={`p-3 rounded-xl flex items-center gap-2 transition-all ${
+                        selected ? 'bg-primary/10 border border-primary' : 'bg-surface-light border border-transparent hover:border-primary/30'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selected ? 'bg-primary border-primary' : 'border-surface-lighter'
+                      }`}>
+                        {selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-sm font-medium text-text-primary">{day}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-text-muted text-center mt-3">Minimum 3 days required. Changes regenerate your plan.</p>
             </div>
           </motion.div>
         )}

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronUp, Trash2, Info, Check, Minus, Plus } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
 import { useApp } from '../context/AppContext'
-import ExerciseAnimation from './ExerciseAnimation'
 
 export default function ExerciseCard({ planExercise, day, exerciseIndex, readonly = false }) {
   const { dispatch } = useApp()
@@ -60,8 +59,8 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
         className="p-4 cursor-pointer flex items-center gap-3"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-xl shrink-0">
-          {muscle?.icon || '💪'}
+        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+          <img src={muscle?.image} alt={muscle?.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-text-primary truncate">{exercise.name}</h3>
@@ -70,7 +69,7 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
               {exercise.difficulty}
             </span>
             <span className="text-xs text-text-muted">{muscle?.name}</span>
-            <span className="text-xs text-text-muted">•</span>
+            <span className="text-xs text-text-muted">·</span>
             <span className="text-xs text-text-muted">{exercise.equipment}</span>
           </div>
         </div>
@@ -92,9 +91,6 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-4">
-              {/* Animation preview */}
-              <ExerciseAnimation animationType={exercise.animationType} compact />
-
               {/* Description */}
               <p className="text-sm text-text-secondary leading-relaxed">{exercise.description}</p>
 
@@ -106,7 +102,7 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
                 <ul className="space-y-1">
                   {exercise.tips.map((tip, i) => (
                     <li key={i} className="text-xs text-text-secondary flex items-start gap-2">
-                      <span className="text-primary-light mt-0.5">•</span> {tip}
+                      <span className="text-primary-light mt-0.5">·</span> {tip}
                     </li>
                   ))}
                 </ul>

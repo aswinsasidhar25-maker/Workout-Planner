@@ -1,14 +1,14 @@
 export const muscleGroups = [
-  { id: 'chest', name: 'Chest', icon: '💪' },
-  { id: 'back', name: 'Back', icon: '🔙' },
-  { id: 'shoulders', name: 'Shoulders', icon: '🏋️' },
-  { id: 'biceps', name: 'Biceps', icon: '💪' },
-  { id: 'triceps', name: 'Triceps', icon: '💪' },
-  { id: 'legs', name: 'Legs', icon: '🦵' },
-  { id: 'glutes', name: 'Glutes', icon: '🍑' },
-  { id: 'core', name: 'Core', icon: '🎯' },
-  { id: 'cardio', name: 'Cardio', icon: '❤️' },
-  { id: 'fullbody', name: 'Full Body', icon: '🏃' },
+  { id: 'chest', name: 'Chest', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300&h=200&fit=crop&auto=format' },
+  { id: 'back', name: 'Back', image: 'https://images.unsplash.com/photo-1603287681836-b174ce5074c2?w=300&h=200&fit=crop&auto=format' },
+  { id: 'shoulders', name: 'Shoulders', image: 'https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=300&h=200&fit=crop&auto=format' },
+  { id: 'biceps', name: 'Biceps', image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=300&h=200&fit=crop&auto=format' },
+  { id: 'triceps', name: 'Triceps', image: 'https://images.unsplash.com/photo-1590507621108-433608c97823?w=300&h=200&fit=crop&auto=format' },
+  { id: 'legs', name: 'Legs', image: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=300&h=200&fit=crop&auto=format' },
+  { id: 'glutes', name: 'Glutes', image: 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=300&h=200&fit=crop&auto=format' },
+  { id: 'core', name: 'Core', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop&auto=format' },
+  { id: 'cardio', name: 'Cardio', image: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=300&h=200&fit=crop&auto=format' },
+  { id: 'fullbody', name: 'Full Body', image: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=300&h=200&fit=crop&auto=format' },
 ]
 
 export const durationOptions = [
@@ -269,11 +269,11 @@ export const exercises = [
 ]
 
 export const goals = [
-  { id: 'build_muscle', name: 'Build Muscle', description: 'Gain lean muscle mass and get stronger', icon: '💪', color: 'from-indigo-500 to-purple-600', setsRange: [3, 5], repsRange: [6, 12], restSeconds: 90 },
-  { id: 'lose_weight', name: 'Lose Weight', description: 'Burn fat and slim down with cardio and circuits', icon: '🔥', color: 'from-orange-500 to-red-600', setsRange: [3, 4], repsRange: [12, 20], restSeconds: 45 },
-  { id: 'strength', name: 'Build Strength', description: 'Maximize your raw power and lifting numbers', icon: '🏋️', color: 'from-red-500 to-rose-600', setsRange: [4, 6], repsRange: [3, 6], restSeconds: 180 },
-  { id: 'tone', name: 'Tone & Define', description: 'Get a toned, defined physique', icon: '✨', color: 'from-emerald-500 to-teal-600', setsRange: [3, 4], repsRange: [12, 15], restSeconds: 60 },
-  { id: 'endurance', name: 'Build Endurance', description: 'Improve stamina and cardiovascular health', icon: '🏃', color: 'from-sky-500 to-blue-600', setsRange: [2, 3], repsRange: [15, 25], restSeconds: 30 },
+  { id: 'build_muscle', name: 'Build Muscle', description: 'Gain lean muscle mass and get stronger', image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=250&fit=crop&auto=format', color: 'from-indigo-500 to-purple-600', setsRange: [3, 5], repsRange: [6, 12], restSeconds: 90 },
+  { id: 'lose_weight', name: 'Lose Weight', description: 'Burn fat and slim down with cardio and circuits', image: 'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400&h=250&fit=crop&auto=format', color: 'from-orange-500 to-red-600', setsRange: [3, 4], repsRange: [12, 20], restSeconds: 45 },
+  { id: 'strength', name: 'Build Strength', description: 'Maximize your raw power and lifting numbers', image: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&h=250&fit=crop&auto=format', color: 'from-red-500 to-rose-600', setsRange: [4, 6], repsRange: [3, 6], restSeconds: 180 },
+  { id: 'tone', name: 'Tone & Define', description: 'Get a toned, defined physique', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=250&fit=crop&auto=format', color: 'from-emerald-500 to-teal-600', setsRange: [3, 4], repsRange: [12, 15], restSeconds: 60 },
+  { id: 'endurance', name: 'Build Endurance', description: 'Improve stamina and cardiovascular health', image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400&h=250&fit=crop&auto=format', color: 'from-sky-500 to-blue-600', setsRange: [2, 3], repsRange: [15, 25], restSeconds: 30 },
 ]
 
 export const fitnessLevels = [
@@ -284,108 +284,54 @@ export const fitnessLevels = [
 
 export const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-export const motivationalQuotes = [
-  "The only bad workout is the one that didn't happen.",
-  "Your body can stand almost anything. It's your mind you have to convince.",
-  "Success isn't always about greatness. It's about consistency.",
-  "The pain you feel today will be the strength you feel tomorrow.",
-  "Don't stop when you're tired. Stop when you're done.",
-  "Push yourself because no one else is going to do it for you.",
-  "The body achieves what the mind believes.",
-  "Sweat is just fat crying.",
-  "Fitness is not about being better than someone else. It's about being better than you used to be.",
-  "Wake up. Work out. Look hot. Kick ass.",
-  "Fall in love with taking care of your body.",
-  "Strong is the new beautiful.",
-  "Be stronger than your excuses.",
-  "The only way to finish is to start.",
-  "Results happen over time, not overnight. Work hard, stay consistent.",
-]
-
 export const badgeDefinitions = [
-  { id: 'first_workout', name: 'First Step', icon: '🎯', description: 'Complete your first workout', check: (s) => Object.keys(s.workoutLog || {}).length >= 1 },
-  { id: 'three_workouts', name: 'Getting Started', icon: '🌱', description: 'Complete 3 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 3 },
-  { id: 'ten_workouts', name: 'Dedicated', icon: '💪', description: 'Complete 10 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 10 },
-  { id: 'twentyfive_workouts', name: 'Powerhouse', icon: '🔥', description: 'Complete 25 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 25 },
-  { id: 'streak_3', name: 'On a Roll', icon: '⚡', description: '3-day workout streak', check: (s) => (s.streak?.current >= 3 || s.streak?.longest >= 3) },
-  { id: 'streak_7', name: 'Week Warrior', icon: '🏆', description: '7-day workout streak', check: (s) => (s.streak?.current >= 7 || s.streak?.longest >= 7) },
-  { id: 'five_days', name: 'Full Timer', icon: '📅', description: 'Work out on 5 different days', check: (s) => Object.keys(s.workoutLog || {}).length >= 5 },
+  { id: 'first_workout', name: 'First Step', description: 'Complete your first workout', check: (s) => Object.keys(s.workoutLog || {}).length >= 1 },
+  { id: 'three_workouts', name: 'Getting Started', description: 'Complete 3 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 3 },
+  { id: 'ten_workouts', name: 'Dedicated', description: 'Complete 10 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 10 },
+  { id: 'twentyfive_workouts', name: 'Powerhouse', description: 'Complete 25 workouts', check: (s) => Object.values(s.workoutLog || {}).flat().length >= 25 },
+  { id: 'streak_3', name: 'On a Roll', description: '3-day workout streak', check: (s) => (s.streak?.current >= 3 || s.streak?.longest >= 3) },
+  { id: 'streak_7', name: 'Week Warrior', description: '7-day workout streak', check: (s) => (s.streak?.current >= 7 || s.streak?.longest >= 7) },
+  { id: 'five_days', name: 'Full Timer', description: 'Work out on 5 different days', check: (s) => Object.keys(s.workoutLog || {}).length >= 5 },
 ]
 
-export const dailyTips = [
-  "Try adding 5% more weight to your main lifts this week.",
-  "Drink a glass of water between every set today.",
-  "Focus on form over speed — slow reps build more muscle.",
-  "Try a 5-minute stretch routine after your workout.",
-  "Challenge yourself: add one extra set to your favorite exercise.",
-  "Breathe out on the effort, breathe in on the release.",
-  "Swap one exercise for something new to keep things fresh.",
-  "Set a timer for rest periods to stay focused.",
-  "Fuel up with protein within 30 minutes of finishing.",
-  "Visualize completing each set before you start lifting.",
-  "Track your weights today — future you will thank you.",
-  "Try a superset: pair two exercises with no rest between.",
-]
-
-export const defaultSplits = {
-  build_muscle: {
-    name: 'Push/Pull/Legs',
-    days: {
-      Monday: { name: 'Push Day', muscles: ['chest', 'shoulders', 'triceps'] },
-      Tuesday: { name: 'Pull Day', muscles: ['back', 'biceps'] },
-      Wednesday: { name: 'Leg Day', muscles: ['legs', 'glutes'] },
-      Thursday: { name: 'Push Day', muscles: ['chest', 'shoulders', 'triceps'] },
-      Friday: { name: 'Pull Day', muscles: ['back', 'biceps'] },
-      Saturday: { name: 'Leg Day', muscles: ['legs', 'glutes', 'core'] },
-      Sunday: { name: 'Rest Day', muscles: [] },
-    },
+// Scientific workout split templates based on training frequency
+export const splitTemplates = {
+  3: {
+    name: 'Full Body',
+    slots: [
+      { name: 'Full Body A', muscles: ['chest', 'back', 'legs', 'shoulders', 'core'] },
+      { name: 'Full Body B', muscles: ['back', 'chest', 'glutes', 'biceps', 'triceps'] },
+      { name: 'Full Body C', muscles: ['legs', 'shoulders', 'back', 'core', 'glutes'] },
+    ],
   },
-  lose_weight: {
-    name: 'Full Body + Cardio',
-    days: {
-      Monday: { name: 'Upper Body + Cardio', muscles: ['chest', 'back', 'shoulders', 'cardio'] },
-      Tuesday: { name: 'Lower Body + Core', muscles: ['legs', 'glutes', 'core'] },
-      Wednesday: { name: 'Cardio & Core', muscles: ['cardio', 'core'] },
-      Thursday: { name: 'Upper Body + Cardio', muscles: ['chest', 'back', 'shoulders', 'cardio'] },
-      Friday: { name: 'Lower Body + Core', muscles: ['legs', 'glutes', 'core'] },
-      Saturday: { name: 'Full Body Circuit', muscles: ['fullbody', 'cardio'] },
-      Sunday: { name: 'Active Recovery', muscles: ['cardio'] },
-    },
+  4: {
+    name: 'Upper / Lower',
+    slots: [
+      { name: 'Upper Body A', muscles: ['chest', 'back', 'shoulders', 'triceps'] },
+      { name: 'Lower Body A', muscles: ['legs', 'glutes', 'core'] },
+      { name: 'Upper Body B', muscles: ['back', 'shoulders', 'chest', 'biceps'] },
+      { name: 'Lower Body B', muscles: ['glutes', 'legs', 'core'] },
+    ],
   },
-  strength: {
-    name: 'Powerlifting Split',
-    days: {
-      Monday: { name: 'Squat Day', muscles: ['legs', 'core'] },
-      Tuesday: { name: 'Bench Day', muscles: ['chest', 'triceps'] },
-      Wednesday: { name: 'Rest Day', muscles: [] },
-      Thursday: { name: 'Deadlift Day', muscles: ['back', 'glutes'] },
-      Friday: { name: 'OHP Day', muscles: ['shoulders', 'triceps'] },
-      Saturday: { name: 'Accessories', muscles: ['biceps', 'core', 'legs'] },
-      Sunday: { name: 'Rest Day', muscles: [] },
-    },
+  5: {
+    name: 'Push / Pull / Legs + Upper / Lower',
+    slots: [
+      { name: 'Push', muscles: ['chest', 'shoulders', 'triceps'] },
+      { name: 'Pull', muscles: ['back', 'biceps'] },
+      { name: 'Legs', muscles: ['legs', 'glutes', 'core'] },
+      { name: 'Upper Body', muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'] },
+      { name: 'Lower Body', muscles: ['legs', 'glutes', 'core'] },
+    ],
   },
-  tone: {
-    name: 'Toning Split',
-    days: {
-      Monday: { name: 'Upper Body', muscles: ['chest', 'back', 'shoulders'] },
-      Tuesday: { name: 'Lower Body', muscles: ['legs', 'glutes'] },
-      Wednesday: { name: 'Core & Cardio', muscles: ['core', 'cardio'] },
-      Thursday: { name: 'Arms & Shoulders', muscles: ['biceps', 'triceps', 'shoulders'] },
-      Friday: { name: 'Lower Body', muscles: ['legs', 'glutes'] },
-      Saturday: { name: 'Full Body', muscles: ['fullbody', 'cardio'] },
-      Sunday: { name: 'Rest Day', muscles: [] },
-    },
-  },
-  endurance: {
-    name: 'Endurance Plan',
-    days: {
-      Monday: { name: 'Cardio + Upper', muscles: ['cardio', 'chest', 'back'] },
-      Tuesday: { name: 'Cardio + Lower', muscles: ['cardio', 'legs'] },
-      Wednesday: { name: 'Active Recovery', muscles: ['core'] },
-      Thursday: { name: 'Cardio + Full Body', muscles: ['cardio', 'fullbody'] },
-      Friday: { name: 'Cardio + Core', muscles: ['cardio', 'core'] },
-      Saturday: { name: 'Long Cardio', muscles: ['cardio'] },
-      Sunday: { name: 'Rest Day', muscles: [] },
-    },
+  6: {
+    name: 'Push / Pull / Legs x2',
+    slots: [
+      { name: 'Push A', muscles: ['chest', 'shoulders', 'triceps'] },
+      { name: 'Pull A', muscles: ['back', 'biceps'] },
+      { name: 'Legs A', muscles: ['legs', 'glutes', 'core'] },
+      { name: 'Push B', muscles: ['chest', 'shoulders', 'triceps'] },
+      { name: 'Pull B', muscles: ['back', 'biceps'] },
+      { name: 'Legs B', muscles: ['legs', 'glutes', 'core'] },
+    ],
   },
 }

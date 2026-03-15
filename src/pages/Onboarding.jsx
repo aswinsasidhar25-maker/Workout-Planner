@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock } from 'lucide-react'
+import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock, Calendar } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, fitnessLevels, durationOptions } from '../data/exercises'
+import { goals, fitnessLevels, durationOptions, weekDays } from '../data/exercises'
 
-const steps = ['welcome', 'gender', 'goal', 'level', 'duration', 'ready']
+const steps = ['welcome', 'gender', 'goal', 'level', 'duration', 'days', 'ready']
 
 export default function Onboarding() {
   const { dispatch } = useApp()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
-  const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60 })
+  const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60, workoutDays: [] })
 
   const currentStep = steps[step]
   const canProceed = () => {
@@ -21,6 +21,7 @@ export default function Onboarding() {
       case 'goal': return profile.goals.length > 0
       case 'level': return profile.fitnessLevel !== ''
       case 'duration': return profile.duration > 0
+      case 'days': return profile.workoutDays.length >= 3
       default: return true
     }
   }
@@ -34,8 +35,19 @@ export default function Onboarding() {
     }))
   }
 
+  const toggleDay = (day) => {
+    setProfile(p => ({
+      ...p,
+      workoutDays: p.workoutDays.includes(day)
+        ? p.workoutDays.filter(d => d !== day)
+        : [...p.workoutDays, day],
+    }))
+  }
+
   const handleFinish = () => {
-    dispatch({ type: 'SET_PROFILE', payload: profile })
+    // Sort workout days to match weekDays order
+    const sortedDays = weekDays.filter(d => profile.workoutDays.includes(d))
+    dispatch({ type: 'SET_PROFILE', payload: { ...profile, workoutDays: sortedDays } })
     navigate('/')
   }
 
@@ -105,8 +117,8 @@ export default function Onboarding() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { id: 'male', label: 'Male', emoji: '🙋‍♂️', desc: 'Optimized for male physiology', gradient: 'from-blue-500 to-indigo-600' },
-                    { id: 'female', label: 'Female', emoji: '🙋‍♀️', desc: 'Optimized for female physiology', gradient: 'from-pink-500 to-rose-600' },
+                    { id: 'male', label: 'Male', desc: 'Optimized for male physiology', gradient: 'from-blue-500 to-indigo-600' },
+                    { id: 'female', label: 'Female', desc: 'Optimized for female physiology', gradient: 'from-pink-500 to-rose-600' },
                   ].map(g => (
                     <button
                       key={g.id}
@@ -117,7 +129,9 @@ export default function Onboarding() {
                           : 'border-surface-lighter bg-surface hover:border-primary/30'
                       }`}
                     >
-                      <div className="text-5xl mb-3">{g.emoji}</div>
+                      <div className={`w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br ${g.gradient} flex items-center justify-center`}>
+                        <Dumbbell className="w-8 h-8 text-white" />
+                      </div>
                       <p className="font-bold text-lg text-text-primary">{g.label}</p>
                       <p className="text-xs text-text-secondary mt-1">{g.desc}</p>
                     </button>
@@ -146,8 +160,8 @@ export default function Onboarding() {
                             : 'border-surface-lighter bg-surface hover:border-primary/30'
                         }`}
                       >
-                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl shadow-lg`}>
-                          {g.icon}
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 shadow-lg">
+                          <img src={g.image} alt={g.name} className="w-full h-full object-cover" loading="lazy" />
                         </div>
                         <div className="flex-1">
                           <p className="font-bold text-text-primary">{g.name}</p>
@@ -227,6 +241,40 @@ export default function Onboarding() {
               </div>
             )}
 
+            {/* WORKOUT DAYS */}
+            {currentStep === 'days' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-text-primary">Training Days</h2>
+                  <p className="text-text-secondary mt-2">Which days do you want to work out? (min 3)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {weekDays.map(day => {
+                    const selected = profile.workoutDays.includes(day)
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => toggleDay(day)}
+                        className={`p-4 rounded-2xl border-2 text-center transition-all duration-300 ${
+                          selected
+                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                            : 'border-surface-lighter bg-surface hover:border-primary/30'
+                        }`}
+                      >
+                        <Calendar className={`w-5 h-5 mx-auto mb-2 ${selected ? 'text-primary-light' : 'text-text-muted'}`} />
+                        <p className="font-bold text-text-primary">{day}</p>
+                        <p className="text-xs text-text-muted mt-1">{selected ? 'Training' : 'Rest'}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-center text-sm text-primary-light">
+                  {profile.workoutDays.length} day{profile.workoutDays.length !== 1 ? 's' : ''} selected
+                  {profile.workoutDays.length > 0 && ` · ${7 - profile.workoutDays.length} rest day${7 - profile.workoutDays.length !== 1 ? 's' : ''}`}
+                </p>
+              </div>
+            )}
+
             {/* READY */}
             {currentStep === 'ready' && (
               <div className="text-center space-y-8">
@@ -254,7 +302,7 @@ export default function Onboarding() {
                         const g = goals.find(gl => gl.id === gId)
                         return (
                           <span key={gId} className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary-light">
-                            {g?.icon} {g?.name}
+                            {g?.name}
                           </span>
                         )
                       })}
@@ -267,6 +315,12 @@ export default function Onboarding() {
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Duration</span>
                     <span className="text-text-primary font-medium">{profile.duration} min/session</span>
+                  </div>
+                  <div className="flex justify-between text-sm items-start">
+                    <span className="text-text-muted">Training</span>
+                    <span className="text-text-primary font-medium text-right">
+                      {profile.workoutDays.length} days/week
+                    </span>
                   </div>
                 </div>
                 <motion.button
