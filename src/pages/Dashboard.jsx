@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap } from 'lucide-react'
+import { Flame, Target, TrendingUp, ChevronRight, Dumbbell, Zap, Clock } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, weekDays, exercises, motivationalQuotes } from '../data/exercises'
+import { goals, weekDays, exercises, motivationalQuotes, durationOptions } from '../data/exercises'
 
 export default function Dashboard() {
   const { state } = useApp()
@@ -11,7 +11,8 @@ export default function Dashboard() {
 
   const today = weekDays[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]
   const todayPlan = workoutPlan[today]
-  const goalConfig = goals.find(g => g.id === profile.goal)
+  const goalConfigs = goals.filter(g => profile.goals.includes(g.id))
+  const durationConfig = durationOptions.find(d => d.id === profile.duration)
 
   const stats = useMemo(() => {
     const logEntries = Object.values(workoutLog).flat()
@@ -52,7 +53,7 @@ export default function Dashboard() {
       {/* Greeting */}
       <div>
         <h1 className="text-3xl font-black text-text-primary">
-          Hey, {profile.name}! 💪
+          Hey, {profile.name}!
         </h1>
         <p className="text-text-secondary mt-1">Let's crush today's workout.</p>
       </div>
@@ -96,6 +97,11 @@ export default function Dashboard() {
           <div>
             <p className="text-xs text-primary-light font-semibold uppercase tracking-wider">{today}</p>
             <h2 className="text-xl font-bold text-text-primary mt-1">{todayPlan?.name || 'No Plan'}</h2>
+            {durationConfig && (
+              <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3" /> {durationConfig.label} session
+              </p>
+            )}
           </div>
           {todayPlan && !todayPlan.isRest && (
             <div className="relative w-16 h-16">
@@ -133,7 +139,7 @@ export default function Dashboard() {
                   <div key={i} className="flex items-center gap-3 py-2">
                     <div className={`w-2 h-2 rounded-full ${done === planEx.sets ? 'bg-success' : done > 0 ? 'bg-warning' : 'bg-surface-lighter'}`} />
                     <span className="text-sm text-text-primary flex-1">{ex.name}</span>
-                    <span className="text-xs text-text-muted">{planEx.sets}×{planEx.reps}</span>
+                    <span className="text-xs text-text-muted">{planEx.sets}x{planEx.reps}</span>
                   </div>
                 )
               })}
@@ -185,28 +191,35 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Goal info */}
-      <div className={`bg-gradient-to-br ${goalConfig?.color} rounded-2xl p-6 text-white`}>
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-3xl">{goalConfig?.icon}</span>
-          <div>
-            <p className="font-bold text-lg">{goalConfig?.name}</p>
-            <p className="text-sm opacity-80">{goalConfig?.description}</p>
-          </div>
-        </div>
-        <div className="flex gap-4 mt-4">
-          <div className="bg-white/10 rounded-xl px-4 py-2">
-            <p className="text-xs opacity-70">Sets</p>
-            <p className="font-bold">{goalConfig?.setsRange.join('-')}</p>
-          </div>
-          <div className="bg-white/10 rounded-xl px-4 py-2">
-            <p className="text-xs opacity-70">Reps</p>
-            <p className="font-bold">{goalConfig?.repsRange.join('-')}</p>
-          </div>
-          <div className="bg-white/10 rounded-xl px-4 py-2">
-            <p className="text-xs opacity-70">Rest</p>
-            <p className="font-bold">{goalConfig?.restSeconds}s</p>
-          </div>
+      {/* Goals info - scrollable cards for multiple goals */}
+      <div>
+        <h3 className="text-lg font-bold text-text-primary mb-3">Your Goals</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+          {goalConfigs.map(gc => (
+            <div key={gc.id} className={`bg-gradient-to-br ${gc.color} rounded-2xl p-5 text-white shrink-0 ${goalConfigs.length === 1 ? 'w-full' : 'w-72'}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">{gc.icon}</span>
+                <div>
+                  <p className="font-bold text-lg">{gc.name}</p>
+                  <p className="text-sm opacity-80">{gc.description}</p>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-3">
+                <div className="bg-white/10 rounded-xl px-3 py-2">
+                  <p className="text-xs opacity-70">Sets</p>
+                  <p className="font-bold">{gc.setsRange.join('-')}</p>
+                </div>
+                <div className="bg-white/10 rounded-xl px-3 py-2">
+                  <p className="text-xs opacity-70">Reps</p>
+                  <p className="font-bold">{gc.repsRange.join('-')}</p>
+                </div>
+                <div className="bg-white/10 rounded-xl px-3 py-2">
+                  <p className="text-xs opacity-70">Rest</p>
+                  <p className="font-bold">{gc.restSeconds}s</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

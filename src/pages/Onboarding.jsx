@@ -1,27 +1,37 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
+import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, fitnessLevels } from '../data/exercises'
+import { goals, fitnessLevels, durationOptions } from '../data/exercises'
 
-const steps = ['welcome', 'gender', 'goal', 'level', 'ready']
+const steps = ['welcome', 'gender', 'goal', 'level', 'duration', 'ready']
 
 export default function Onboarding() {
   const { dispatch } = useApp()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
-  const [profile, setProfile] = useState({ name: '', gender: '', goal: '', fitnessLevel: '' })
+  const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60 })
 
   const currentStep = steps[step]
   const canProceed = () => {
     switch (currentStep) {
       case 'welcome': return profile.name.trim().length > 0
       case 'gender': return profile.gender !== ''
-      case 'goal': return profile.goal !== ''
+      case 'goal': return profile.goals.length > 0
       case 'level': return profile.fitnessLevel !== ''
+      case 'duration': return profile.duration > 0
       default: return true
     }
+  }
+
+  const toggleGoal = (goalId) => {
+    setProfile(p => ({
+      ...p,
+      goals: p.goals.includes(goalId)
+        ? p.goals.filter(id => id !== goalId)
+        : [...p.goals, goalId],
+    }))
   }
 
   const handleFinish = () => {
@@ -116,39 +126,47 @@ export default function Onboarding() {
               </div>
             )}
 
-            {/* GOAL */}
+            {/* GOAL - MULTI SELECT */}
             {currentStep === 'goal' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-3xl font-bold text-text-primary">What's your goal?</h2>
-                  <p className="text-text-secondary mt-2">We'll tailor your workout plan accordingly</p>
+                  <h2 className="text-3xl font-bold text-text-primary">What are your goals?</h2>
+                  <p className="text-text-secondary mt-2">Select one or more — we'll blend your plan</p>
                 </div>
                 <div className="space-y-3">
-                  {goals.map(g => (
-                    <button
-                      key={g.id}
-                      onClick={() => setProfile(p => ({ ...p, goal: g.id }))}
-                      className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all duration-300 text-left ${
-                        profile.goal === g.id
-                          ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-                          : 'border-surface-lighter bg-surface hover:border-primary/30'
-                      }`}
-                    >
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl shadow-lg`}>
-                        {g.icon}
-                      </div>
-                      <div>
-                        <p className="font-bold text-text-primary">{g.name}</p>
-                        <p className="text-sm text-text-secondary">{g.description}</p>
-                      </div>
-                      {profile.goal === g.id && (
-                        <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 text-white" />
+                  {goals.map(g => {
+                    const selected = profile.goals.includes(g.id)
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => toggleGoal(g.id)}
+                        className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all duration-300 text-left ${
+                          selected
+                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                            : 'border-surface-lighter bg-surface hover:border-primary/30'
+                        }`}
+                      >
+                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl shadow-lg`}>
+                          {g.icon}
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        <div className="flex-1">
+                          <p className="font-bold text-text-primary">{g.name}</p>
+                          <p className="text-sm text-text-secondary">{g.description}</p>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          selected ? 'bg-primary border-primary' : 'border-surface-lighter'
+                        }`}>
+                          {selected && <Check className="w-4 h-4 text-white" />}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
+                {profile.goals.length > 0 && (
+                  <p className="text-center text-sm text-primary-light">
+                    {profile.goals.length} goal{profile.goals.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
             )}
 
@@ -181,6 +199,34 @@ export default function Onboarding() {
               </div>
             )}
 
+            {/* DURATION */}
+            {currentStep === 'duration' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-text-primary">Workout Duration</h2>
+                  <p className="text-text-secondary mt-2">How long do you want each session to be?</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {durationOptions.map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => setProfile(p => ({ ...p, duration: d.id }))}
+                      className={`p-5 rounded-2xl border-2 text-center transition-all duration-300 ${
+                        profile.duration === d.id
+                          ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10 scale-105'
+                          : 'border-surface-lighter bg-surface hover:border-primary/30'
+                      }`}
+                    >
+                      <Clock className={`w-6 h-6 mx-auto mb-2 ${profile.duration === d.id ? 'text-primary-light' : 'text-text-muted'}`} />
+                      <p className="text-2xl font-black text-text-primary">{d.label}</p>
+                      <p className="text-xs text-text-secondary mt-1">{d.description}</p>
+                      <p className="text-xs text-text-muted mt-2">{d.exercisesPerSession} exercises/day</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* READY */}
             {currentStep === 'ready' && (
               <div className="text-center space-y-8">
@@ -201,13 +247,26 @@ export default function Onboarding() {
                     <span className="text-text-muted">Profile</span>
                     <span className="text-text-primary font-medium capitalize">{profile.gender}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-muted">Goal</span>
-                    <span className="text-text-primary font-medium">{goals.find(g => g.id === profile.goal)?.name}</span>
+                  <div className="flex justify-between text-sm items-start">
+                    <span className="text-text-muted">Goals</span>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {profile.goals.map(gId => {
+                        const g = goals.find(gl => gl.id === gId)
+                        return (
+                          <span key={gId} className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary-light">
+                            {g?.icon} {g?.name}
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Level</span>
                     <span className="text-text-primary font-medium capitalize">{profile.fitnessLevel}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-muted">Duration</span>
+                    <span className="text-text-primary font-medium">{profile.duration} min/session</span>
                   </div>
                 </div>
                 <motion.button
@@ -216,7 +275,7 @@ export default function Onboarding() {
                   onClick={handleFinish}
                   className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-bold text-lg shadow-xl shadow-primary/30 pulse-glow"
                 >
-                  Let's Go! 🔥
+                  Let's Go!
                 </motion.button>
               </div>
             )}

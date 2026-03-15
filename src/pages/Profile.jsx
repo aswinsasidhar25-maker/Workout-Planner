@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Target, BarChart3, Settings, LogOut, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, fitnessLevels } from '../data/exercises'
+import { goals, fitnessLevels, durationOptions } from '../data/exercises'
 import { useNavigate } from 'react-router-dom'
 
 export default function Profile() {
@@ -11,19 +11,28 @@ export default function Profile() {
   const navigate = useNavigate()
   const [showGoalChange, setShowGoalChange] = useState(false)
   const [showLevelChange, setShowLevelChange] = useState(false)
+  const [showDurationChange, setShowDurationChange] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
-  const goalConfig = goals.find(g => g.id === profile.goal)
-  const levelConfig = fitnessLevels.find(l => l.id === profile.fitnessLevel)
+  const goalConfigs = goals.filter(g => profile.goals.includes(g.id))
+  const durationConfig = durationOptions.find(d => d.id === profile.duration)
 
-  const handleGoalChange = (goalId) => {
-    dispatch({ type: 'SET_PROFILE', payload: { ...profile, goal: goalId } })
-    setShowGoalChange(false)
+  const handleGoalToggle = (goalId) => {
+    const newGoals = profile.goals.includes(goalId)
+      ? profile.goals.filter(id => id !== goalId)
+      : [...profile.goals, goalId]
+    if (newGoals.length === 0) return // Must have at least one goal
+    dispatch({ type: 'SET_PROFILE', payload: { ...profile, goals: newGoals } })
   }
 
   const handleLevelChange = (levelId) => {
     dispatch({ type: 'SET_PROFILE', payload: { ...profile, fitnessLevel: levelId } })
     setShowLevelChange(false)
+  }
+
+  const handleDurationChange = (durationId) => {
+    dispatch({ type: 'SET_PROFILE', payload: { ...profile, duration: durationId } })
+    setShowDurationChange(false)
   }
 
   const handleReset = () => {
@@ -48,27 +57,31 @@ export default function Profile() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>
-          <p className="text-sm text-text-secondary capitalize">{profile.gender} · {profile.fitnessLevel}</p>
+          <p className="text-sm text-text-secondary capitalize">{profile.gender} - {profile.fitnessLevel} - {durationConfig?.label}</p>
         </div>
       </div>
 
-      {/* Current goal */}
+      {/* Current goals */}
       <div className="bg-surface rounded-2xl border border-surface-lighter overflow-hidden">
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${goalConfig?.color} flex items-center justify-center text-xl`}>
-              {goalConfig?.icon}
+            <div className="flex -space-x-2">
+              {goalConfigs.slice(0, 3).map(gc => (
+                <div key={gc.id} className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gc.color} flex items-center justify-center text-lg border-2 border-surface`}>
+                  {gc.icon}
+                </div>
+              ))}
             </div>
             <div>
-              <p className="text-xs text-text-muted">Current Goal</p>
-              <p className="font-bold text-text-primary">{goalConfig?.name}</p>
+              <p className="text-xs text-text-muted">Goals ({goalConfigs.length})</p>
+              <p className="font-bold text-text-primary text-sm">{goalConfigs.map(g => g.name).join(', ')}</p>
             </div>
           </div>
           <button
             onClick={() => setShowGoalChange(!showGoalChange)}
             className="text-sm text-primary-light hover:text-primary transition-colors"
           >
-            Change
+            Edit
           </button>
         </div>
 
@@ -79,23 +92,74 @@ export default function Profile() {
             className="overflow-hidden border-t border-surface-lighter"
           >
             <div className="p-4 space-y-2">
-              {goals.map(g => (
+              {goals.map(g => {
+                const selected = profile.goals.includes(g.id)
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => handleGoalToggle(g.id)}
+                    className={`w-full p-3 rounded-xl flex items-center gap-3 text-left transition-all ${
+                      selected ? 'bg-primary/10 border border-primary' : 'bg-surface-light border border-transparent hover:border-primary/30'
+                    }`}
+                  >
+                    <span className="text-xl">{g.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-text-primary">{g.name}</p>
+                      <p className="text-xs text-text-muted">{g.description}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                      selected ? 'bg-primary border-primary' : 'border-surface-lighter'
+                    }`}>
+                      {selected && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </button>
+                )
+              })}
+              <p className="text-xs text-text-muted text-center mt-2">Changing goals will regenerate your workout plan</p>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Workout Duration */}
+      <div className="bg-surface rounded-2xl border border-surface-lighter overflow-hidden">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-text-muted">Session Duration</p>
+              <p className="font-bold text-text-primary">{durationConfig?.label} ({durationConfig?.exercisesPerSession} exercises)</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowDurationChange(!showDurationChange)}
+            className="text-sm text-primary-light hover:text-primary transition-colors"
+          >
+            Change
+          </button>
+        </div>
+
+        {showDurationChange && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            className="overflow-hidden border-t border-surface-lighter"
+          >
+            <div className="p-4 grid grid-cols-2 gap-2">
+              {durationOptions.map(d => (
                 <button
-                  key={g.id}
-                  onClick={() => handleGoalChange(g.id)}
-                  className={`w-full p-3 rounded-xl flex items-center gap-3 text-left transition-all ${
-                    profile.goal === g.id ? 'bg-primary/10 border border-primary' : 'bg-surface-light border border-transparent hover:border-primary/30'
+                  key={d.id}
+                  onClick={() => handleDurationChange(d.id)}
+                  className={`p-3 rounded-xl text-center transition-all ${
+                    profile.duration === d.id ? 'bg-primary/10 border-2 border-primary' : 'bg-surface-light border-2 border-transparent hover:border-primary/30'
                   }`}
                 >
-                  <span className="text-xl">{g.icon}</span>
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">{g.name}</p>
-                    <p className="text-xs text-text-muted">{g.description}</p>
-                  </div>
-                  {profile.goal === g.id && <CheckCircle2 className="w-5 h-5 text-primary-light ml-auto" />}
+                  <p className="font-bold text-text-primary">{d.label}</p>
+                  <p className="text-xs text-text-muted">{d.exercisesPerSession} exercises</p>
                 </button>
               ))}
-              <p className="text-xs text-text-muted text-center mt-2">Changing your goal will regenerate your workout plan</p>
             </div>
           </motion.div>
         )}

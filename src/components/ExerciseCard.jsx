@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, ChevronDown, ChevronUp, RefreshCw, Trash2, Info, Check, Minus, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2, Info, Check, Minus, Plus } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
 import { useApp } from '../context/AppContext'
+import ExerciseAnimation from './ExerciseAnimation'
 
 export default function ExerciseCard({ planExercise, day, exerciseIndex, readonly = false }) {
   const { dispatch } = useApp()
   const [expanded, setExpanded] = useState(false)
-  const [showVideo, setShowVideo] = useState(false)
 
   const exercise = exercises.find(e => e.id === planExercise.exerciseId)
   if (!exercise) return null
@@ -92,6 +92,9 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-4">
+              {/* Animation preview */}
+              <ExerciseAnimation animationType={exercise.animationType} compact />
+
               {/* Description */}
               <p className="text-sm text-text-secondary leading-relaxed">{exercise.description}</p>
 
@@ -135,7 +138,7 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
               {!readonly && (
                 <div>
                   <p className="text-xs font-semibold text-text-secondary mb-2">
-                    Sets × {planExercise.reps} reps | Rest: {planExercise.rest}s
+                    Sets x {planExercise.reps} reps | Rest: {planExercise.rest}s
                   </p>
                   <div className="flex gap-2">
                     {planExercise.completed.map((done, i) => (
@@ -153,32 +156,6 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Video preview */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowVideo(!showVideo) }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary-light text-sm font-medium hover:from-primary/20 hover:to-accent/20 transition-all"
-              >
-                <Play className="w-4 h-4" /> {showVideo ? 'Hide' : 'Watch'} Exercise Preview
-              </button>
-
-              {showVideo && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="rounded-xl overflow-hidden"
-                >
-                  <iframe
-                    width="100%"
-                    height="250"
-                    src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(exercise.videoQuery)}`}
-                    title={`${exercise.name} preview`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-xl"
-                  />
-                </motion.div>
               )}
 
               {/* Actions */}
