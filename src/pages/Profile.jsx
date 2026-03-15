@@ -37,7 +37,7 @@ export default function Profile() {
 
   const handleReset = () => {
     dispatch({ type: 'RESET_PROFILE' })
-    localStorage.removeItem('fitforge-state')
+    localStorage.removeItem('zenfit-state')
     navigate('/')
   }
 

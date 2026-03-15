@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { RefreshCw, Plus, Save, CheckCircle2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { RefreshCw, Plus, Save, CheckCircle2, Star } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { weekDays, exercises as allExercises, muscleGroups } from '../data/exercises'
 import ExerciseCard from '../components/ExerciseCard'
@@ -13,6 +13,7 @@ export default function WorkoutPlan() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [addFilter, setAddFilter] = useState('')
   const [saved, setSaved] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   const dayPlan = workoutPlan[selectedDay]
 
@@ -33,7 +34,9 @@ export default function WorkoutPlan() {
       },
     })
     setSaved(true)
+    setShowCelebration(true)
     setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setShowCelebration(false), 4000)
   }
 
   const availableExercises = useMemo(() => {
@@ -154,6 +157,60 @@ export default function WorkoutPlan() {
           <p className="text-text-secondary mt-2">Your muscles grow during rest. Stay hydrated, stretch, and prepare for tomorrow's session.</p>
         </div>
       ) : null}
+
+      {/* Celebration modal */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCelebration(false)}
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0 }}
+              transition={{ type: 'spring', bounce: 0.5 }}
+              className="bg-surface rounded-3xl border border-accent/30 p-8 text-center max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 10, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-6xl mb-4"
+              >
+                🎉
+              </motion.div>
+              <h2 className="text-2xl font-black text-text-primary mb-2">Workout Complete!</h2>
+              <p className="text-text-secondary mb-6">Great job crushing it today. Keep the momentum going!</p>
+              <div className="flex justify-center gap-4 mb-6">
+                <div className="bg-primary/10 rounded-xl px-4 py-3 text-center">
+                  <p className="text-xl font-bold text-primary-light">{completedSets}</p>
+                  <p className="text-[10px] text-text-muted">Sets Done</p>
+                </div>
+                <div className="bg-accent/10 rounded-xl px-4 py-3 text-center">
+                  <p className="text-xl font-bold text-accent">{dayPlan?.exercises.length || 0}</p>
+                  <p className="text-[10px] text-text-muted">Exercises</p>
+                </div>
+              </div>
+              <div className="flex gap-1 justify-center">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.1 }}
+                  >
+                    <Star className="w-6 h-6 text-accent fill-accent" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add exercise modal */}
       {showAddModal && (
