@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Play, X, ChevronDown, Filter } from 'lucide-react'
+import { Search, X, ChevronDown, Filter } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
+import ExerciseAnimation from '../components/ExerciseAnimation'
 
 export default function ExerciseLibrary() {
   const [search, setSearch] = useState('')
@@ -33,7 +34,7 @@ export default function ExerciseLibrary() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-black text-text-primary">Exercise Library</h1>
-        <p className="text-sm text-text-secondary">Browse {exercises.length} exercises with video previews</p>
+        <p className="text-sm text-text-secondary">Browse {exercises.length} exercises with animated previews</p>
       </div>
 
       {/* Search */}
@@ -69,70 +70,38 @@ export default function ExerciseLibrary() {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden space-y-3"
           >
-            {/* Muscle groups */}
             <div>
               <p className="text-xs font-semibold text-text-muted mb-2">Muscle Group</p>
               <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setMuscleFilter('')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    muscleFilter === '' ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'
-                  }`}
-                >
-                  All
-                </button>
+                <button onClick={() => setMuscleFilter('')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${muscleFilter === '' ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>All</button>
                 {muscleGroups.map(mg => (
-                  <button
-                    key={mg.id}
-                    onClick={() => setMuscleFilter(mg.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      muscleFilter === mg.id ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'
-                    }`}
-                  >
+                  <button key={mg.id} onClick={() => setMuscleFilter(mg.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${muscleFilter === mg.id ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>
                     {mg.icon} {mg.name}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Difficulty */}
             <div>
               <p className="text-xs font-semibold text-text-muted mb-2">Difficulty</p>
               <div className="flex gap-2">
                 {['', 'beginner', 'intermediate', 'advanced'].map(d => (
-                  <button
-                    key={d}
-                    onClick={() => setDifficultyFilter(d)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
-                      difficultyFilter === d ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'
-                    }`}
-                  >
+                  <button key={d} onClick={() => setDifficultyFilter(d)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${difficultyFilter === d ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted hover:text-text-secondary'}`}>
                     {d || 'All'}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Equipment */}
             <div>
               <p className="text-xs font-semibold text-text-muted mb-2">Equipment</p>
               <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setEquipmentFilter('')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    equipmentFilter === '' ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'
-                  }`}
-                >
-                  All
-                </button>
+                <button onClick={() => setEquipmentFilter('')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${equipmentFilter === '' ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'}`}>All</button>
                 {equipmentTypes.map(eq => (
-                  <button
-                    key={eq}
-                    onClick={() => setEquipmentFilter(eq)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
-                      equipmentFilter === eq ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'
-                    }`}
-                  >
+                  <button key={eq} onClick={() => setEquipmentFilter(eq)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${equipmentFilter === eq ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'}`}>
                     {eq}
                   </button>
                 ))}
@@ -142,7 +111,6 @@ export default function ExerciseLibrary() {
         )}
       </AnimatePresence>
 
-      {/* Results count */}
       <p className="text-sm text-text-muted">{filtered.length} exercises found</p>
 
       {/* Exercise grid */}
@@ -169,7 +137,7 @@ export default function ExerciseLibrary() {
                       {ex.difficulty}
                     </span>
                     <span className="text-xs text-text-muted">{muscle?.name}</span>
-                    <span className="text-xs text-text-muted capitalize">· {ex.equipment}</span>
+                    <span className="text-xs text-text-muted capitalize">- {ex.equipment}</span>
                   </div>
                   <p className="text-xs text-text-muted mt-2 line-clamp-2">{ex.description}</p>
                 </div>
@@ -195,6 +163,11 @@ export default function ExerciseLibrary() {
                   <button onClick={() => setSelectedExercise(null)} className="text-text-muted hover:text-text-primary">
                     <X className="w-5 h-5" />
                   </button>
+                </div>
+
+                {/* Animation */}
+                <div className="mb-4">
+                  <ExerciseAnimation animationType={selectedExercise.animationType} />
                 </div>
 
                 <div className="flex gap-2 mb-4 flex-wrap">
@@ -233,22 +206,9 @@ export default function ExerciseLibrary() {
                   </ul>
                 </div>
 
-                <div className="bg-surface-light rounded-xl p-3 mb-4 flex items-center justify-between">
+                <div className="bg-surface-light rounded-xl p-3 flex items-center justify-between">
                   <span className="text-sm text-text-secondary">Est. calories per rep</span>
                   <span className="text-sm font-bold text-accent">{selectedExercise.calories} cal</span>
-                </div>
-
-                {/* Video */}
-                <div className="rounded-xl overflow-hidden">
-                  <iframe
-                    width="100%"
-                    height="250"
-                    src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(selectedExercise.videoQuery)}`}
-                    title={`${selectedExercise.name} preview`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-xl"
-                  />
                 </div>
               </div>
             </motion.div>

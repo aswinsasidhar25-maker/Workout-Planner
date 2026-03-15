@@ -83,42 +83,99 @@ const getInitialState = () => {
 }
 
 function generateWorkoutPlan(profile) {
-  const { goal, fitnessLevel, gender } = profile
-  const split = defaultSplits[goal]
-  if (!split) return {}
+  const { goals: selectedGoals, fitnessLevel, gender, duration } = profile
+  if (!selectedGoals || selectedGoals.length === 0) return {}
 
-  const goalConfig = goals.find(g => g.id === goal)
+  const durationConfig = durationOptions.find(d => d.id === duration) || durationOptions[2]
+  const maxExercises = durationConfig.exercisesPerSession
+
+  // Get goal configs for selected goals
+  const goalConfigs = goals.filter(g => selectedGoals.includes(g.id))
+
+  // Blend training parameters by averaging across selected goals
+  const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
+  const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
+  const avgRepsHigh = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[1], 0) / goalConfigs.length)
+  const avgRest = Math.round(goalConfigs.reduce((s, g) => s + g.restSeconds, 0) / goalConfigs.length)
+
+  // Merge muscle groups from all selected goals' splits
+  const mergedDays = {}
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+  dayNames.forEach(day => {
+    const allMuscles = new Set()
+    const dayLabels = []
+
+    selectedGoals.forEach(goalId => {
+      const split = defaultSplits[goalId]
+      if (!split) return
+      const dayInfo = split.days[day]
+      if (dayInfo.muscles.length > 0) {
+        dayInfo.muscles.forEach(m => allMuscles.add(m))
+        dayLabels.push(dayInfo.name)
+      }
+    })
+
+    if (allMuscles.size === 0) {
+      mergedDays[day] = { name: 'Rest Day', muscles: [] }
+    } else {
+      // Create a combined name from unique labels
+      const uniqueLabels = [...new Set(dayLabels)]
+      const name = uniqueLabels.length === 1 ? uniqueLabels[0] : uniqueLabels.slice(0, 2).join(' + ')
+      mergedDays[day] = { name, muscles: [...allMuscles] }
+    }
+  })
+
   const plan = {}
 
-  Object.entries(split.days).forEach(([day, dayInfo]) => {
+  Object.entries(mergedDays).forEach(([day, dayInfo]) => {
     if (dayInfo.muscles.length === 0) {
       plan[day] = { name: dayInfo.name, exercises: [], isRest: true }
       return
     }
 
     const dayExercises = []
-    dayInfo.muscles.forEach(muscleId => {
+    const usedIds = new Set()
+
+    // Distribute exercises across muscle groups, capped by duration
+    const muscleList = dayInfo.muscles
+    const exercisesPerMuscle = Math.max(1, Math.floor(maxExercises / muscleList.length))
+    let remaining = maxExercises
+
+    muscleList.forEach(muscleId => {
+      if (remaining <= 0) return
+      const count = Math.min(exercisesPerMuscle, remaining)
+
       const available = exercises.filter(ex => {
         if (ex.muscle !== muscleId) return false
+        if (usedIds.has(ex.id)) return false
         if (ex.gender !== 'both' && ex.gender !== gender) return false
         if (fitnessLevel === 'beginner' && ex.difficulty === 'advanced') return false
         return true
       })
 
-      const count = muscleId === 'cardio' ? 1 : fitnessLevel === 'beginner' ? 2 : 3
-      const selected = available.sort(() => Math.random() - 0.5).slice(0, count)
+      // Prioritize exercises that match more of the user's goals
+      available.sort((a, b) => {
+        const aMatch = a.goals.filter(g => selectedGoals.includes(g)).length
+        const bMatch = b.goals.filter(g => selectedGoals.includes(g)).length
+        if (bMatch !== aMatch) return bMatch - aMatch
+        return Math.random() - 0.5
+      })
 
+      const selected = available.slice(0, count)
       selected.forEach(ex => {
-        const sets = goalConfig.setsRange[fitnessLevel === 'beginner' ? 0 : 1]
-        const reps = goalConfig.repsRange[0] + Math.floor(Math.random() * (goalConfig.repsRange[1] - goalConfig.repsRange[0]))
+        usedIds.add(ex.id)
+        const sets = fitnessLevel === 'beginner' ? Math.max(2, avgSets - 1) : avgSets
+        const reps = avgRepsLow + Math.floor(Math.random() * (avgRepsHigh - avgRepsLow + 1))
         dayExercises.push({
           exerciseId: ex.id,
           sets,
           reps,
           weight: 0,
-          rest: goalConfig.restSeconds,
+          rest: avgRest,
           completed: Array(sets).fill(false),
         })
+        remaining--
       })
     })
 
@@ -185,17 +242,21 @@ function reducer(state, action) {
     }
     case 'REPLACE_EXERCISE': {
       const { day, exerciseIndex, newExerciseId } = action.payload
-      const goalConfig = goals.find(g => g.id === state.profile.goal)
       const dayPlanCopy = { ...state.workoutPlan[day] }
       const exListCopy = [...dayPlanCopy.exercises]
-      const sets = goalConfig.setsRange[state.profile.fitnessLevel === 'beginner' ? 0 : 1]
-      const reps = goalConfig.repsRange[0] + Math.floor(Math.random() * (goalConfig.repsRange[1] - goalConfig.repsRange[0]))
+      const goalConfigs = goals.filter(g => state.profile.goals.includes(g.id))
+      const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
+      const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
+      const avgRepsHigh = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[1], 0) / goalConfigs.length)
+      const avgRest = Math.round(goalConfigs.reduce((s, g) => s + g.restSeconds, 0) / goalConfigs.length)
+      const sets = state.profile.fitnessLevel === 'beginner' ? Math.max(2, avgSets - 1) : avgSets
+      const reps = avgRepsLow + Math.floor(Math.random() * (avgRepsHigh - avgRepsLow + 1))
       exListCopy[exerciseIndex] = {
         exerciseId: newExerciseId,
         sets,
         reps,
         weight: 0,
-        rest: goalConfig.restSeconds,
+        rest: avgRest,
         completed: Array(sets).fill(false),
       }
       dayPlanCopy.exercises = exListCopy
@@ -203,17 +264,18 @@ function reducer(state, action) {
     }
     case 'ADD_EXERCISE_TO_DAY': {
       const { day, exerciseId } = action.payload
-      const goalCfg = goals.find(g => g.id === state.profile.goal)
+      const goalConfigs = goals.filter(g => state.profile.goals.includes(g.id))
+      const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
+      const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
+      const avgRest = Math.round(goalConfigs.reduce((s, g) => s + g.restSeconds, 0) / goalConfigs.length)
       const dayPlanAdd = { ...state.workoutPlan[day] }
-      const sets = goalCfg.setsRange[0]
-      const reps = goalCfg.repsRange[0]
       dayPlanAdd.exercises = [...dayPlanAdd.exercises, {
         exerciseId,
-        sets,
-        reps,
+        sets: state.profile.fitnessLevel === 'beginner' ? Math.max(2, avgSets - 1) : avgSets,
+        reps: avgRepsLow,
         weight: 0,
-        rest: goalCfg.restSeconds,
-        completed: Array(sets).fill(false),
+        rest: avgRest,
+        completed: Array(state.profile.fitnessLevel === 'beginner' ? Math.max(2, avgSets - 1) : avgSets).fill(false),
       }]
       dayPlanAdd.isRest = false
       return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dayPlanAdd } }
