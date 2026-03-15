@@ -14,13 +14,14 @@ export default function Profile() {
   const [showDurationChange, setShowDurationChange] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
-  const goalConfigs = goals.filter(g => profile.goals.includes(g.id))
+  const goalConfigs = goals.filter(g => (profile.goals || []).includes(g.id))
   const durationConfig = durationOptions.find(d => d.id === profile.duration)
 
   const handleGoalToggle = (goalId) => {
-    const newGoals = profile.goals.includes(goalId)
-      ? profile.goals.filter(id => id !== goalId)
-      : [...profile.goals, goalId]
+    const currentGoals = profile.goals || []
+    const newGoals = currentGoals.includes(goalId)
+      ? currentGoals.filter(id => id !== goalId)
+      : [...currentGoals, goalId]
     if (newGoals.length === 0) return // Must have at least one goal
     dispatch({ type: 'SET_PROFILE', payload: { ...profile, goals: newGoals } })
   }
@@ -93,7 +94,7 @@ export default function Profile() {
           >
             <div className="p-4 space-y-2">
               {goals.map(g => {
-                const selected = profile.goals.includes(g.id)
+                const selected = (profile.goals || []).includes(g.id)
                 return (
                   <button
                     key={g.id}

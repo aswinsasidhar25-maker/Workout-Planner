@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
-import { exercises, goals, defaultSplits, badgeDefinitions } from '../data/exercises'
+import { exercises, goals, defaultSplits, durationOptions, badgeDefinitions } from '../data/exercises'
 
 const AppContext = createContext()
 
@@ -61,6 +61,19 @@ const getInitialState = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
+      // Migrate old profile formats
+      if (parsed.profile) {
+        if (parsed.profile.goal && !parsed.profile.goals) {
+          parsed.profile.goals = [parsed.profile.goal]
+          delete parsed.profile.goal
+        }
+        if (!Array.isArray(parsed.profile.goals)) {
+          parsed.profile.goals = []
+        }
+        if (!parsed.profile.duration) {
+          parsed.profile.duration = 60
+        }
+      }
       parsed.streak = calculateStreak(parsed.workoutLog || {})
       if (!parsed.unlockedBadges) parsed.unlockedBadges = []
       if (!parsed.newBadge) parsed.newBadge = null
@@ -244,7 +257,7 @@ function reducer(state, action) {
       const { day, exerciseIndex, newExerciseId } = action.payload
       const dayPlanCopy = { ...state.workoutPlan[day] }
       const exListCopy = [...dayPlanCopy.exercises]
-      const goalConfigs = goals.filter(g => state.profile.goals.includes(g.id))
+      const goalConfigs = goals.filter(g => (state.profile.goals || []).includes(g.id))
       const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
       const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
       const avgRepsHigh = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[1], 0) / goalConfigs.length)
@@ -264,7 +277,7 @@ function reducer(state, action) {
     }
     case 'ADD_EXERCISE_TO_DAY': {
       const { day, exerciseId } = action.payload
-      const goalConfigs = goals.filter(g => state.profile.goals.includes(g.id))
+      const goalConfigs = goals.filter(g => (state.profile.goals || []).includes(g.id))
       const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
       const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
       const avgRest = Math.round(goalConfigs.reduce((s, g) => s + g.restSeconds, 0) / goalConfigs.length)

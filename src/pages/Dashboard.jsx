@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Lightbulb, Award, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { goals, weekDays, exercises, motivationalQuotes, badgeDefinitions, dailyTips } from '../data/exercises'
+import { goals, weekDays, exercises, motivationalQuotes, durationOptions, badgeDefinitions, dailyTips } from '../data/exercises'
 
 export default function Dashboard() {
   const { state, dispatch } = useApp()
@@ -11,7 +11,7 @@ export default function Dashboard() {
 
   const today = weekDays[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]
   const todayPlan = workoutPlan[today]
-  const goalConfigs = goals.filter(g => profile.goals.includes(g.id))
+  const goalConfigs = goals.filter(g => (profile.goals || []).includes(g.id))
   const durationConfig = durationOptions.find(d => d.id === profile.duration)
 
   const stats = useMemo(() => {
