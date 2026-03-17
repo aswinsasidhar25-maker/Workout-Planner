@@ -89,6 +89,7 @@ const getInitialState = () => {
   }
   return {
     profile: null,
+    profileImage: null,
     workoutPlan: {},
     workoutLog: {},
     customExercises: [],
@@ -302,8 +303,10 @@ function reducer(state, action) {
       dayPlanRm.exercises = dayPlanRm.exercises.filter((_, i) => i !== removeIdx)
       return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dayPlanRm } }
     }
+    case 'SET_PROFILE_IMAGE':
+      return { ...state, profileImage: action.payload }
     case 'RESET_PROFILE':
-      return { ...state, profile: null, workoutPlan: {} }
+      return { ...state, profile: null, profileImage: null, workoutPlan: {} }
     default:
       return state
   }

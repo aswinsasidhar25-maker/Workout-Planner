@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell } from 'lucide-react'
+import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell, Camera } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { goals, fitnessLevels, durationOptions, weekDays } from '../data/exercises'
 import { useNavigate } from 'react-router-dom'
 
+const ACCEPTED_IMAGE_TYPES = 'image/webp,image/avif,image/jpeg,image/png'
+
 export default function Profile() {
   const { state, dispatch } = useApp()
-  const { profile } = state
+  const { profile, profileImage } = state
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
+  const [imageError, setImageError] = useState('')
   const [showGoalChange, setShowGoalChange] = useState(false)
   const [showLevelChange, setShowLevelChange] = useState(false)
   const [showDurationChange, setShowDurationChange] = useState(false)
@@ -53,6 +57,26 @@ export default function Profile() {
     navigate('/')
   }
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const allowed = ['image/webp', 'image/avif', 'image/jpeg', 'image/png']
+    if (!allowed.includes(file.type)) {
+      setImageError('Only WebP, AVIF, JPEG, and PNG images are supported.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image must be under 5 MB.')
+      return
+    }
+    setImageError('')
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      dispatch({ type: 'SET_PROFILE_IMAGE', payload: ev.target.result })
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -62,14 +86,39 @@ export default function Profile() {
 
       {/* Avatar & Name */}
       <div className="bg-surface rounded-2xl border border-surface-lighter p-6 flex items-center gap-4">
-        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
-          profile.gender === 'male' ? 'from-blue-500 to-indigo-600' : 'from-pink-500 to-rose-600'
-        } flex items-center justify-center shadow-lg`}>
-          <Dumbbell className="w-7 h-7 text-white" />
+        <div className="relative shrink-0">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+            />
+          ) : (
+            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
+              profile.gender === 'male' ? 'from-blue-500 to-indigo-600' : 'from-pink-500 to-rose-600'
+            } flex items-center justify-center shadow-lg`}>
+              <Dumbbell className="w-7 h-7 text-white" />
+            </div>
+          )}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md hover:bg-primary-dark transition-colors"
+            title="Upload photo"
+          >
+            <Camera className="w-3 h-3 text-white" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES}
+            onChange={handleImageUpload}
+            className="hidden"
+          />
         </div>
         <div>
           <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>
           <p className="text-sm text-text-secondary capitalize">{profile.gender} - {profile.fitnessLevel} - {durationConfig?.label}</p>
+          {imageError && <p className="text-xs text-danger mt-1">{imageError}</p>}
         </div>
       </div>
 
