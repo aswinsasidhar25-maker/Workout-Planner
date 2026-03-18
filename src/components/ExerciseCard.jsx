@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronUp, Trash2, Info, Check, Minus, Plus } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
+import { getExerciseImage } from '../data/exerciseImages'
 import { useApp } from '../context/AppContext'
 
 export default function ExerciseCard({ planExercise, day, exerciseIndex, readonly = false }) {
@@ -12,6 +13,7 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
   if (!exercise) return null
 
   const muscle = muscleGroups.find(m => m.id === exercise.muscle)
+  const exerciseImage = getExerciseImage(exercise.id) || muscle?.image
   const completedSets = planExercise.completed.filter(Boolean).length
   const totalSets = planExercise.sets
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0
@@ -60,7 +62,7 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
         onClick={() => setExpanded(!expanded)}
       >
         <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
-          <img src={muscle?.image} alt={muscle?.name} className="w-full h-full object-cover" />
+          <img src={exerciseImage} alt={exercise.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-text-primary truncate">{exercise.name}</h3>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock, Calendar, Cloud } from 'lucide-react'
@@ -14,6 +14,13 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60, workoutDays: [] })
+
+  // Auto-fill name from Google account when user signs in
+  useEffect(() => {
+    if (isSignedIn && user?.name && !profile.name.trim()) {
+      setProfile(p => ({ ...p, name: user.name }))
+    }
+  }, [isSignedIn, user])
 
   const currentStep = steps[step]
   const canProceed = () => {
@@ -151,8 +158,22 @@ export default function Onboarding() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { id: 'male', label: 'Male', desc: 'Optimized for male physiology', gradient: 'from-blue-500 to-indigo-600' },
-                    { id: 'female', label: 'Female', desc: 'Optimized for female physiology', gradient: 'from-pink-500 to-rose-600' },
+                    { id: 'male', label: 'Male', desc: 'Optimized for male physiology', gradient: 'from-blue-500 to-indigo-600',
+                      icon: (
+                        <svg viewBox="0 0 64 64" className="w-10 h-10" fill="white">
+                          <circle cx="32" cy="14" r="8" />
+                          <path d="M22 28h20a4 4 0 014 4v14a2 2 0 01-2 2h-2v14a2 2 0 01-2 2h-6a2 2 0 01-2-2V48h-2v14a2 2 0 01-2 2h-6a2 2 0 01-2-2V48h-2a2 2 0 01-2-2V32a4 4 0 014-4z" />
+                        </svg>
+                      )
+                    },
+                    { id: 'female', label: 'Female', desc: 'Optimized for female physiology', gradient: 'from-pink-500 to-rose-600',
+                      icon: (
+                        <svg viewBox="0 0 64 64" className="w-10 h-10" fill="white">
+                          <circle cx="32" cy="14" r="8" />
+                          <path d="M24 28h16a3 3 0 013 3v5l-4 12h-3v14a2 2 0 01-2 2h-4a2 2 0 01-2-2V48h-2v14a2 2 0 01-2 2h-4a2 2 0 01-2-2V48h-3l-4-12v-5a3 3 0 013-3z" />
+                        </svg>
+                      )
+                    },
                   ].map(g => (
                     <button
                       key={g.id}
@@ -164,7 +185,7 @@ export default function Onboarding() {
                       }`}
                     >
                       <div className={`w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br ${g.gradient} flex items-center justify-center`}>
-                        <Dumbbell className="w-8 h-8 text-white" />
+                        {g.icon}
                       </div>
                       <p className="font-bold text-lg text-text-primary">{g.label}</p>
                       <p className="text-xs text-text-secondary mt-1">{g.desc}</p>

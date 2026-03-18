@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, ChevronDown, Filter } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
+import { getExerciseImage } from '../data/exerciseImages'
 
 export default function ExerciseLibrary() {
   const [search, setSearch] = useState('')
@@ -117,6 +118,7 @@ export default function ExerciseLibrary() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filtered.map((ex, i) => {
           const muscle = muscleGroups.find(m => m.id === ex.muscle)
+          const exImage = getExerciseImage(ex.id) || muscle?.image
           return (
             <motion.button
               key={ex.id}
@@ -128,7 +130,7 @@ export default function ExerciseLibrary() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 group-hover:scale-110 transition-transform">
-                  <img src={muscle?.image} alt={muscle?.name} className="w-full h-full object-cover" />
+                  <img src={exImage} alt={ex.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text-primary truncate">{ex.name}</h3>
@@ -160,7 +162,7 @@ export default function ExerciseLibrary() {
               {/* Exercise image header */}
               <div className="relative h-40 overflow-hidden rounded-t-2xl">
                 <img
-                  src={muscleGroups.find(m => m.id === selectedExercise.muscle)?.image}
+                  src={getExerciseImage(selectedExercise.id) || muscleGroups.find(m => m.id === selectedExercise.muscle)?.image}
                   alt={selectedExercise.name}
                   className="w-full h-full object-cover"
                 />
