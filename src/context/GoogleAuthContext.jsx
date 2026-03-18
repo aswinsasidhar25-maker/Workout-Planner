@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 
 const GoogleAuthContext = createContext()
 
-const CLIENT_ID = '720501806212-vfocc2ei15s2cgh7ih412aav8h07pqqd.apps.googleusercontent.com'
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata'
 
 export function GoogleAuthProvider({ children }) {
@@ -113,7 +113,7 @@ export function GoogleAuthProvider({ children }) {
     setSyncStatus,
     signIn,
     signOut,
-    gisReady: gisReady && !!CLIENT_ID,
+    gisReady: gisReady && CLIENT_ID && CLIENT_ID !== 'YOUR_CLIENT_ID_HERE',
   }
 
   return (
