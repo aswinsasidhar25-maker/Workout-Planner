@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 
 const GoogleAuthContext = createContext()
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+const CLIENT_ID = '720501806212-vfocc2ei15s2cgh7ih412aav8h07pqqd.apps.googleusercontent.com'
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata'
 
 export function GoogleAuthProvider({ children }) {
@@ -34,7 +34,7 @@ export function GoogleAuthProvider({ children }) {
 
   // Initialize token client once GIS is ready
   useEffect(() => {
-    if (!gisReady || !CLIENT_ID || CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') return
+    if (!gisReady || !CLIENT_ID) return
 
     tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
@@ -113,7 +113,7 @@ export function GoogleAuthProvider({ children }) {
     setSyncStatus,
     signIn,
     signOut,
-    gisReady: gisReady && CLIENT_ID && CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com',
+    gisReady: gisReady && !!CLIENT_ID,
   }
 
   return (
