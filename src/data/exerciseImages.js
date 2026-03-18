@@ -33,7 +33,7 @@ export const exerciseImageMap = {
 export function getExerciseImage(exerciseId) {
   const filename = exerciseImageMap[exerciseId]
   if (filename) {
-    return `/exercises/${encodeURIComponent(filename)}`
+    return `/exercises/${encodeURIComponent(filename)}?v=2`
   }
   return null
 }
