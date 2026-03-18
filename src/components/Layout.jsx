@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Dumbbell, Calendar, TrendingUp, User, Home } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import SyncStatusIndicator from './SyncStatusIndicator'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
@@ -29,6 +30,7 @@ export default function Layout({ children }) {
               <p className="text-[10px] text-text-muted uppercase tracking-widest">Balance & Strength</p>
             </div>
           </div>
+          <SyncStatusIndicator />
         </div>
       </header>
 

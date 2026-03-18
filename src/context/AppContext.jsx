@@ -1,5 +1,7 @@
-import { createContext, useContext, useReducer, useEffect } from 'react'
+import { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react'
 import { exercises, goals, splitTemplates, durationOptions, badgeDefinitions, weekDays } from '../data/exercises'
+import { useGoogleAuth } from './GoogleAuthContext'
+import { findAppDataFile, readFile, createFile, updateFile } from '../services/googleDriveService'
 
 const AppContext = createContext()
 
@@ -302,6 +304,34 @@ function reducer(state, action) {
       dayPlanRm.exercises = dayPlanRm.exercises.filter((_, i) => i !== removeIdx)
       return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dayPlanRm } }
     }
+    case 'LOAD_STATE': {
+      const loaded = action.payload
+      // Migrate old profile formats
+      if (loaded.profile) {
+        if (loaded.profile.goal && !loaded.profile.goals) {
+          loaded.profile.goals = [loaded.profile.goal]
+          delete loaded.profile.goal
+        }
+        if (!Array.isArray(loaded.profile.goals)) {
+          loaded.profile.goals = []
+        }
+        if (!loaded.profile.duration) {
+          loaded.profile.duration = 60
+        }
+        if (!Array.isArray(loaded.profile.workoutDays)) {
+          loaded.profile.workoutDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        }
+      }
+      loaded.streak = calculateStreak(loaded.workoutLog || {})
+      if (!loaded.unlockedBadges) loaded.unlockedBadges = []
+      loaded.newBadge = null
+      if (!loaded.workoutLog) loaded.workoutLog = {}
+      if (!loaded.workoutPlan) loaded.workoutPlan = {}
+      if (!loaded.customExercises) loaded.customExercises = []
+      const freshBadges = checkBadges(loaded)
+      loaded.unlockedBadges = [...loaded.unlockedBadges, ...freshBadges]
+      return loaded
+    }
     case 'RESET_PROFILE':
       return { ...state, profile: null, workoutPlan: {} }
     default:
@@ -311,13 +341,105 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, getInitialState)
+  const { accessToken, isSignedIn, setSyncStatus } = useGoogleAuth()
+  const driveFileIdRef = useRef(null)
+  const debounceRef = useRef(null)
+  const hasLoadedFromDriveRef = useRef(false)
+  const isLoadingRef = useRef(false)
 
+  // Save to localStorage on every state change
   useEffect(() => {
     localStorage.setItem('zenfit-state', JSON.stringify(state))
   }, [state])
 
+  // Load data from Drive when user signs in
+  useEffect(() => {
+    if (!isSignedIn || !accessToken || hasLoadedFromDriveRef.current) return
+    hasLoadedFromDriveRef.current = true
+    isLoadingRef.current = true
+
+    async function loadFromDrive() {
+      try {
+        setSyncStatus('syncing')
+        const fileInfo = await findAppDataFile(accessToken)
+
+        if (fileInfo) {
+          driveFileIdRef.current = fileInfo.fileId
+          const driveData = await readFile(accessToken, fileInfo.fileId)
+          if (driveData && typeof driveData === 'object') {
+            dispatch({ type: 'LOAD_STATE', payload: driveData })
+          }
+        } else {
+          // First time — upload current state to Drive
+          const fileId = await createFile(accessToken, state)
+          driveFileIdRef.current = fileId
+        }
+        setSyncStatus('synced')
+      } catch (err) {
+        console.error('Failed to load from Drive:', err)
+        setSyncStatus('error')
+      } finally {
+        isLoadingRef.current = false
+      }
+    }
+
+    loadFromDrive()
+  }, [isSignedIn, accessToken])
+
+  // Reset load flag on sign out
+  useEffect(() => {
+    if (!isSignedIn) {
+      hasLoadedFromDriveRef.current = false
+      driveFileIdRef.current = null
+    }
+  }, [isSignedIn])
+
+  // Debounced save to Drive on state changes
+  useEffect(() => {
+    if (!isSignedIn || !accessToken || isLoadingRef.current) return
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        setSyncStatus('syncing')
+        if (driveFileIdRef.current) {
+          await updateFile(accessToken, driveFileIdRef.current, state)
+        } else {
+          const fileId = await createFile(accessToken, state)
+          driveFileIdRef.current = fileId
+        }
+        setSyncStatus('synced')
+      } catch (err) {
+        console.error('Failed to save to Drive:', err)
+        setSyncStatus('error')
+      }
+    }, 2000)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [state, isSignedIn, accessToken])
+
+  const syncNow = useCallback(async () => {
+    if (!isSignedIn || !accessToken) return
+    try {
+      setSyncStatus('syncing')
+      if (driveFileIdRef.current) {
+        await updateFile(accessToken, driveFileIdRef.current, state)
+      } else {
+        const fileId = await createFile(accessToken, state)
+        driveFileIdRef.current = fileId
+      }
+      setSyncStatus('synced')
+    } catch (err) {
+      console.error('Failed to sync:', err)
+      setSyncStatus('error')
+    }
+  }, [isSignedIn, accessToken, state])
+
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, syncNow }}>
       {children}
     </AppContext.Provider>
   )
