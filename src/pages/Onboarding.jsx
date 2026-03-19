@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock, Calendar, Cloud } from 'lucide-react'
+import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Clock, Calendar, Cloud, Ruler, Scale } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useGoogleAuth } from '../context/GoogleAuthContext'
 import { goals, fitnessLevels, durationOptions, weekDays } from '../data/exercises'
+import { lbsToKg, kgToLbs, ftInToCm, cmToFtIn, formatHeight, formatWeight } from '../utils/calories'
 
-const steps = ['welcome', 'gender', 'goal', 'level', 'duration', 'days', 'ready']
+const steps = ['welcome', 'gender', 'body', 'goal', 'level', 'duration', 'days', 'ready']
 
 export default function Onboarding() {
   const { dispatch } = useApp()
   const { signIn, isSignedIn, user, gisReady } = useGoogleAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
-  const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60, workoutDays: [] })
+  const [profile, setProfile] = useState({ name: '', gender: '', goals: [], fitnessLevel: '', duration: 60, workoutDays: [], height: '', weight: '', units: { height: 'cm', weight: 'kg' } })
+  const [heightFt, setHeightFt] = useState('')
+  const [heightIn, setHeightIn] = useState('')
 
   // Auto-fill name from Google account when user signs in
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function Onboarding() {
     switch (currentStep) {
       case 'welcome': return profile.name.trim().length > 0
       case 'gender': return profile.gender !== ''
+      case 'body': return true
       case 'goal': return profile.goals.length > 0
       case 'level': return profile.fitnessLevel !== ''
       case 'duration': return profile.duration > 0
@@ -56,7 +60,16 @@ export default function Onboarding() {
   const handleFinish = () => {
     // Sort workout days to match weekDays order
     const sortedDays = weekDays.filter(d => profile.workoutDays.includes(d))
-    dispatch({ type: 'SET_PROFILE', payload: { ...profile, workoutDays: sortedDays } })
+    // Convert body measurements to metric for storage
+    let heightCm = profile.height ? Number(profile.height) : null
+    let weightKg = profile.weight ? Number(profile.weight) : null
+    if (profile.units.height === 'ft' && (heightFt || heightIn)) {
+      heightCm = ftInToCm(Number(heightFt) || 0, Number(heightIn) || 0)
+    }
+    if (profile.units.weight === 'lbs' && weightKg) {
+      weightKg = lbsToKg(weightKg)
+    }
+    dispatch({ type: 'SET_PROFILE', payload: { ...profile, workoutDays: sortedDays, height: heightCm || null, weight: weightKg || null } })
     navigate('/')
   }
 
@@ -192,6 +205,101 @@ export default function Onboarding() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* BODY MEASUREMENTS */}
+            {currentStep === 'body' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-text-primary">Body Measurements</h2>
+                  <p className="text-text-secondary mt-2">Helps us calculate accurate calorie burn</p>
+                </div>
+
+                {/* Unit toggle */}
+                <div className="flex bg-surface-lighter rounded-xl p-1 max-w-xs mx-auto">
+                  <button
+                    onClick={() => setProfile(p => ({ ...p, units: { height: 'cm', weight: 'kg' } }))}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      profile.units.weight === 'kg' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                    }`}
+                  >
+                    Metric
+                  </button>
+                  <button
+                    onClick={() => setProfile(p => ({ ...p, units: { height: 'ft', weight: 'lbs' } }))}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      profile.units.weight === 'lbs' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                    }`}
+                  >
+                    Imperial
+                  </button>
+                </div>
+
+                {/* Height input */}
+                <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Ruler className="w-5 h-5 text-primary-light" />
+                    </div>
+                    <span className="font-bold text-text-primary">Height</span>
+                    <span className="text-xs text-text-muted ml-auto">Optional</span>
+                  </div>
+                  {profile.units.height === 'cm' ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        placeholder="170"
+                        value={profile.height}
+                        onChange={e => setProfile(p => ({ ...p, height: e.target.value }))}
+                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                      />
+                      <span className="text-sm text-text-muted w-8">cm</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        placeholder="5"
+                        value={heightFt}
+                        onChange={e => setHeightFt(e.target.value)}
+                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                      />
+                      <span className="text-sm text-text-muted w-4">ft</span>
+                      <input
+                        type="number"
+                        placeholder="10"
+                        value={heightIn}
+                        onChange={e => setHeightIn(e.target.value)}
+                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                      />
+                      <span className="text-sm text-text-muted w-4">in</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Weight input */}
+                <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Scale className="w-5 h-5 text-accent" />
+                    </div>
+                    <span className="font-bold text-text-primary">Weight</span>
+                    <span className="text-xs text-text-muted ml-auto">Optional</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder={profile.units.weight === 'kg' ? '70' : '154'}
+                      value={profile.weight}
+                      onChange={e => setProfile(p => ({ ...p, weight: e.target.value }))}
+                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                    />
+                    <span className="text-sm text-text-muted w-8">{profile.units.weight}</span>
+                  </div>
+                </div>
+
+                <p className="text-center text-xs text-text-muted">You can skip this and set it later in your profile</p>
               </div>
             )}
 
@@ -350,6 +458,22 @@ export default function Onboarding() {
                     <span className="text-text-muted">Profile</span>
                     <span className="text-text-primary font-medium capitalize">{profile.gender}</span>
                   </div>
+                  {(profile.height || (heightFt || heightIn)) && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-muted">Height</span>
+                      <span className="text-text-primary font-medium">
+                        {profile.units.height === 'ft'
+                          ? `${heightFt || 0}'${heightIn || 0}"`
+                          : `${profile.height} cm`}
+                      </span>
+                    </div>
+                  )}
+                  {profile.weight && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-muted">Weight</span>
+                      <span className="text-text-primary font-medium">{profile.weight} {profile.units.weight}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm items-start">
                     <span className="text-text-muted">Goals</span>
                     <div className="flex flex-wrap gap-1 justify-end">

@@ -78,10 +78,19 @@ const getInitialState = () => {
         if (!Array.isArray(parsed.profile.workoutDays)) {
           parsed.profile.workoutDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
         }
+        // Migrate body measurements
+        if (parsed.profile.height === undefined) parsed.profile.height = null
+        if (parsed.profile.weight === undefined) parsed.profile.weight = null
+        if (!parsed.profile.units) parsed.profile.units = { height: 'cm', weight: 'kg' }
       }
       parsed.streak = calculateStreak(parsed.workoutLog || {})
       if (!parsed.unlockedBadges) parsed.unlockedBadges = []
       if (!parsed.newBadge) parsed.newBadge = null
+      if (!parsed.weightLog) parsed.weightLog = {}
+      if (parsed.weightGoal === undefined) parsed.weightGoal = null
+      if (parsed.weightTrackerEnabled === undefined) {
+        parsed.weightTrackerEnabled = parsed.profile?.goals?.includes('lose_weight') || false
+      }
       const newBadges = checkBadges(parsed)
       parsed.unlockedBadges = [...parsed.unlockedBadges, ...newBadges]
       return parsed
@@ -97,6 +106,9 @@ const getInitialState = () => {
     streak: { current: 0, longest: 0 },
     unlockedBadges: [],
     newBadge: null,
+    weightLog: {},
+    weightGoal: null,
+    weightTrackerEnabled: false,
   }
 }
 
@@ -304,6 +316,20 @@ function reducer(state, action) {
       dayPlanRm.exercises = dayPlanRm.exercises.filter((_, i) => i !== removeIdx)
       return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dayPlanRm } }
     }
+    case 'ADD_WEIGHT_ENTRY': {
+      const { date, weight } = action.payload
+      return { ...state, weightLog: { ...state.weightLog, [date]: { weight } } }
+    }
+    case 'DELETE_WEIGHT_ENTRY': {
+      const { [action.payload.date]: _, ...rest } = state.weightLog
+      return { ...state, weightLog: rest }
+    }
+    case 'SET_WEIGHT_GOAL': {
+      return { ...state, weightGoal: action.payload }
+    }
+    case 'TOGGLE_WEIGHT_TRACKER': {
+      return { ...state, weightTrackerEnabled: !state.weightTrackerEnabled }
+    }
     case 'LOAD_STATE': {
       const loaded = action.payload
       // Migrate old profile formats
@@ -328,6 +354,16 @@ function reducer(state, action) {
       if (!loaded.workoutLog) loaded.workoutLog = {}
       if (!loaded.workoutPlan) loaded.workoutPlan = {}
       if (!loaded.customExercises) loaded.customExercises = []
+      if (!loaded.weightLog) loaded.weightLog = {}
+      if (loaded.weightGoal === undefined) loaded.weightGoal = null
+      if (loaded.weightTrackerEnabled === undefined) {
+        loaded.weightTrackerEnabled = loaded.profile?.goals?.includes('lose_weight') || false
+      }
+      if (loaded.profile) {
+        if (loaded.profile.height === undefined) loaded.profile.height = null
+        if (loaded.profile.weight === undefined) loaded.profile.weight = null
+        if (!loaded.profile.units) loaded.profile.units = { height: 'cm', weight: 'kg' }
+      }
       const freshBadges = checkBadges(loaded)
       loaded.unlockedBadges = [...loaded.unlockedBadges, ...freshBadges]
       return loaded

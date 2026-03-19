@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Award, X, Trophy, Star, Medal } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { goals, weekDays, exercises, durationOptions, badgeDefinitions } from '../data/exercises'
+import { calculateCalories } from '../utils/calories'
 
 export default function Dashboard() {
   const { state, dispatch } = useApp()
@@ -36,8 +37,12 @@ export default function Dashboard() {
     const todayCalories = todayPlan && !todayPlan.isRest
       ? todayPlan.exercises.reduce((sum, planEx) => {
           const ex = exercises.find(e => e.id === planEx.exerciseId)
+          if (!ex) return sum
           const completedCount = planEx.completed.filter(Boolean).length
-          return sum + (ex ? ex.calories * completedCount * planEx.reps : 0)
+          if (profile.weight) {
+            return sum + calculateCalories(ex.id, ex.type, profile.weight, completedCount, planEx.reps)
+          }
+          return sum + (ex.calories * completedCount * planEx.reps)
         }, 0)
       : 0
 

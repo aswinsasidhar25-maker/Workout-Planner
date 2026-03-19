@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, ChevronDown, Filter } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
 import { getExerciseImage } from '../data/exerciseImages'
+import { useApp } from '../context/AppContext'
+import { calculateCalories } from '../utils/calories'
 
 export default function ExerciseLibrary() {
+  const { state } = useApp()
+  const profile = state.profile
   const [search, setSearch] = useState('')
   const [muscleFilter, setMuscleFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState('')
@@ -215,8 +219,14 @@ export default function ExerciseLibrary() {
                 </div>
 
                 <div className="bg-surface-light rounded-xl p-3 flex items-center justify-between">
-                  <span className="text-sm text-text-secondary">Est. calories per rep</span>
-                  <span className="text-sm font-bold text-accent">{selectedExercise.calories} cal</span>
+                  <span className="text-sm text-text-secondary">
+                    {profile?.weight ? 'Est. calories per set (10 reps)' : 'Est. calories per rep'}
+                  </span>
+                  <span className="text-sm font-bold text-accent">
+                    {profile?.weight
+                      ? `~${calculateCalories(selectedExercise.id, selectedExercise.type, profile.weight, 1, 10)} cal`
+                      : `${selectedExercise.calories} cal`}
+                  </span>
                 </div>
               </div>
             </motion.div>

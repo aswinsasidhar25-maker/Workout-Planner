@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell, Cloud, CloudUpload, CloudOff } from 'lucide-react'
+import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell, Cloud, CloudUpload, CloudOff, Ruler, Scale } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useGoogleAuth } from '../context/GoogleAuthContext'
 import { goals, fitnessLevels, durationOptions, weekDays } from '../data/exercises'
 import { useNavigate } from 'react-router-dom'
+import { lbsToKg, kgToLbs, ftInToCm, cmToFtIn, formatHeight, formatWeight } from '../utils/calories'
 
 export default function Profile() {
   const { state, dispatch, syncNow } = useApp()
@@ -15,7 +16,21 @@ export default function Profile() {
   const [showLevelChange, setShowLevelChange] = useState(false)
   const [showDurationChange, setShowDurationChange] = useState(false)
   const [showDaysChange, setShowDaysChange] = useState(false)
+  const [showBodyEdit, setShowBodyEdit] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [bodyUnits, setBodyUnits] = useState(profile.units || { height: 'cm', weight: 'kg' })
+  const [bodyHeight, setBodyHeight] = useState(
+    profile.height && profile.units?.height === 'cm' ? String(profile.height) : ''
+  )
+  const [bodyHeightFt, setBodyHeightFt] = useState(
+    profile.height && profile.units?.height === 'ft' ? String(cmToFtIn(profile.height).ft) : ''
+  )
+  const [bodyHeightIn, setBodyHeightIn] = useState(
+    profile.height && profile.units?.height === 'ft' ? String(cmToFtIn(profile.height).in) : ''
+  )
+  const [bodyWeight, setBodyWeight] = useState(
+    profile.weight ? (profile.units?.weight === 'lbs' ? String(kgToLbs(profile.weight)) : String(profile.weight)) : ''
+  )
 
   const goalConfigs = goals.filter(g => (profile.goals || []).includes(g.id))
   const durationConfig = durationOptions.find(d => d.id === profile.duration)
@@ -140,6 +155,144 @@ export default function Profile() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Body Measurements */}
+      <div className="bg-surface rounded-2xl border border-surface-lighter overflow-hidden">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+              <Ruler className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-text-muted">Body Measurements</p>
+              <p className="font-bold text-text-primary">
+                {profile.height && profile.weight
+                  ? `${formatHeight(profile.height, profile.units?.height || 'cm')} · ${formatWeight(profile.weight, profile.units?.weight || 'kg')}`
+                  : profile.height
+                    ? formatHeight(profile.height, profile.units?.height || 'cm')
+                    : profile.weight
+                      ? formatWeight(profile.weight, profile.units?.weight || 'kg')
+                      : 'Not set'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowBodyEdit(!showBodyEdit)}
+            className="text-sm text-primary-light hover:text-primary transition-colors"
+          >
+            {showBodyEdit ? 'Cancel' : 'Edit'}
+          </button>
+        </div>
+
+        {showBodyEdit && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            className="overflow-hidden border-t border-surface-lighter"
+          >
+            <div className="p-4 space-y-4">
+              {/* Unit toggle */}
+              <div className="flex bg-surface-lighter rounded-xl p-1">
+                <button
+                  onClick={() => setBodyUnits({ height: 'cm', weight: 'kg' })}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                    bodyUnits.weight === 'kg' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                  }`}
+                >
+                  Metric
+                </button>
+                <button
+                  onClick={() => setBodyUnits({ height: 'ft', weight: 'lbs' })}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                    bodyUnits.weight === 'lbs' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                  }`}
+                >
+                  Imperial
+                </button>
+              </div>
+
+              {/* Height */}
+              <div>
+                <label className="text-xs text-text-muted mb-1 block">Height</label>
+                {bodyUnits.height === 'cm' ? (
+                  <div className="flex items-center gap-2">
+                    <input type="number" placeholder="170" value={bodyHeight}
+                      onChange={e => setBodyHeight(e.target.value)}
+                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                    />
+                    <span className="text-sm text-text-muted w-8">cm</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input type="number" placeholder="5" value={bodyHeightFt}
+                      onChange={e => setBodyHeightFt(e.target.value)}
+                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                    />
+                    <span className="text-sm text-text-muted">ft</span>
+                    <input type="number" placeholder="10" value={bodyHeightIn}
+                      onChange={e => setBodyHeightIn(e.target.value)}
+                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                    />
+                    <span className="text-sm text-text-muted">in</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="text-xs text-text-muted mb-1 block">Weight</label>
+                <div className="flex items-center gap-2">
+                  <input type="number" placeholder={bodyUnits.weight === 'kg' ? '70' : '154'} value={bodyWeight}
+                    onChange={e => setBodyWeight(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                  />
+                  <span className="text-sm text-text-muted w-8">{bodyUnits.weight}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  let heightCm = bodyUnits.height === 'cm'
+                    ? (bodyHeight ? Number(bodyHeight) : null)
+                    : (bodyHeightFt || bodyHeightIn ? ftInToCm(Number(bodyHeightFt) || 0, Number(bodyHeightIn) || 0) : null)
+                  let weightKg = bodyWeight ? Number(bodyWeight) : null
+                  if (bodyUnits.weight === 'lbs' && weightKg) weightKg = lbsToKg(weightKg)
+                  dispatch({ type: 'SET_PROFILE', payload: { ...profile, height: heightCm, weight: weightKg, units: bodyUnits } })
+                  setShowBodyEdit(false)
+                }}
+                className="w-full py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary-dark transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Weight Tracker toggle */}
+      {!(profile.goals || []).includes('lose_weight') && (
+        <div className="bg-surface rounded-2xl border border-surface-lighter p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
+              <Scale className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-text-primary">Weight Tracker</p>
+              <p className="text-xs text-text-muted">Track your weight over time</p>
+            </div>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_WEIGHT_TRACKER' })}
+            className={`w-12 h-7 rounded-full transition-all relative ${
+              state.weightTrackerEnabled ? 'bg-primary' : 'bg-surface-lighter'
+            }`}
+          >
+            <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${
+              state.weightTrackerEnabled ? 'left-6' : 'left-1'
+            }`} />
+          </button>
         </div>
       )}
 

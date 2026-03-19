@@ -1,15 +1,26 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, Flame, Dumbbell, Calendar, Award, Target } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, ReferenceLine } from 'recharts'
+import { TrendingUp, Flame, Dumbbell, Calendar, Award, Target, Scale, Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { exercises, muscleGroups } from '../data/exercises'
+import { calculateCalories, kgToLbs, lbsToKg, formatWeight } from '../utils/calories'
 
 const CHART_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316', '#84cc16', '#14b8a6']
 
 export default function Progress() {
-  const { state } = useApp()
-  const { workoutLog } = state
+  const { state, dispatch } = useApp()
+  const { workoutLog, weightLog, weightGoal, profile } = state
+  const showWeightTracker = state.weightTrackerEnabled || (profile?.goals || []).includes('lose_weight')
+
+  const [calorieView, setCalorieView] = useState('daily')
+  const [weightInput, setWeightInput] = useState('')
+  const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0])
+  const [goalWeight, setGoalWeight] = useState('')
+  const [goalType, setGoalType] = useState('lose')
+  const [showGoalForm, setShowGoalForm] = useState(false)
+
+  const weightUnit = profile?.units?.weight || 'kg'
 
   const analytics = useMemo(() => {
     const entries = Object.entries(workoutLog)
@@ -64,7 +75,13 @@ export default function Progress() {
         totalSets += sets
         totalReps += sets * (ex.reps || 0)
         totalWeight += (ex.weight || 0) * sets * (ex.reps || 0)
-        if (exercise) totalCalories += exercise.calories * sets * (ex.reps || 0)
+        if (exercise) {
+          if (profile?.weight) {
+            totalCalories += calculateCalories(exercise.id, exercise.type, profile.weight, sets, ex.reps || 0)
+          } else {
+            totalCalories += exercise.calories * sets * (ex.reps || 0)
+          }
+        }
       })
     })
 
@@ -82,6 +99,48 @@ export default function Progress() {
       .slice(-14)
       .map(([date, volume]) => ({ date: date.slice(5), volume: Math.round(volume) }))
 
+    // Daily calorie data (last 14 days)
+    const dailyCalories = {}
+    allLogs.forEach(log => {
+      const date = log.date
+      if (!dailyCalories[date]) dailyCalories[date] = 0
+      log.exercises?.forEach(ex => {
+        const exercise = exercises.find(e => e.id === ex.exerciseId)
+        if (exercise) {
+          if (profile?.weight) {
+            dailyCalories[date] += calculateCalories(exercise.id, exercise.type, profile.weight, ex.completedSets || 0, ex.reps || 0)
+          } else {
+            dailyCalories[date] += exercise.calories * (ex.completedSets || 0) * (ex.reps || 0)
+          }
+        }
+      })
+    })
+    const dailyCalorieData = Object.entries(dailyCalories)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-14)
+      .map(([date, cals]) => ({ date: date.slice(5), calories: Math.round(cals) }))
+
+    // Weekly calorie data (last 8 weeks)
+    const weeklyCalorieData = []
+    for (let i = 7; i >= 0; i--) {
+      const weekStart = new Date()
+      weekStart.setDate(weekStart.getDate() - (i * 7))
+      weekStart.setHours(0, 0, 0, 0)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 7)
+
+      let weekCals = 0
+      Object.entries(dailyCalories).forEach(([date, cals]) => {
+        const d = new Date(date)
+        if (d >= weekStart && d < weekEnd) weekCals += cals
+      })
+
+      weeklyCalorieData.push({
+        week: `W${8 - i}`,
+        calories: Math.round(weekCals),
+      })
+    }
+
     // Streak
     let streak = 0
     const sortedDates = [...new Set(allLogs.map(l => l.date))].sort().reverse()
@@ -98,10 +157,41 @@ export default function Progress() {
       }
     }
 
-    return { weeklyData, muscleDistribution, totalWorkouts, totalSets, totalReps, totalCalories, totalWeight, volumeData, streak }
-  }, [workoutLog])
+    return { weeklyData, muscleDistribution, totalWorkouts, totalSets, totalReps, totalCalories, totalWeight, volumeData, streak, dailyCalorieData, weeklyCalorieData }
+  }, [workoutLog, profile?.weight])
+
+  const weightData = useMemo(() => {
+    return Object.entries(weightLog || {})
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, entry]) => ({
+        date: date.slice(5),
+        fullDate: date,
+        weight: weightUnit === 'lbs' ? kgToLbs(entry.weight) : entry.weight,
+      }))
+  }, [weightLog, weightUnit])
 
   const hasData = analytics.totalWorkouts > 0
+
+  const handleAddWeight = () => {
+    if (!weightInput) return
+    let wKg = Number(weightInput)
+    if (weightUnit === 'lbs') wKg = lbsToKg(wKg)
+    dispatch({ type: 'ADD_WEIGHT_ENTRY', payload: { date: weightDate, weight: wKg } })
+    setWeightInput('')
+  }
+
+  const handleSetGoal = () => {
+    if (!goalWeight) return
+    let targetKg = Number(goalWeight)
+    if (weightUnit === 'lbs') targetKg = lbsToKg(targetKg)
+    dispatch({ type: 'SET_WEIGHT_GOAL', payload: { targetWeight: targetKg, type: goalType } })
+    setShowGoalForm(false)
+    setGoalWeight('')
+  }
+
+  const targetWeightDisplay = weightGoal
+    ? (weightUnit === 'lbs' ? kgToLbs(weightGoal.targetWeight) : weightGoal.targetWeight)
+    : null
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -154,6 +244,48 @@ export default function Progress() {
                   <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Calorie Burn chart with daily/weekly toggle */}
+          <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-text-primary">Calorie Burn</h3>
+              <div className="flex bg-surface-lighter rounded-xl p-1">
+                <button
+                  onClick={() => setCalorieView('daily')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    calorieView === 'daily' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                  }`}
+                >
+                  Daily
+                </button>
+                <button
+                  onClick={() => setCalorieView('weekly')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    calorieView === 'weekly' ? 'bg-primary text-white shadow' : 'text-text-muted'
+                  }`}
+                >
+                  Weekly
+                </button>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={calorieView === 'daily' ? analytics.dailyCalorieData : analytics.weeklyCalorieData}>
+                <XAxis dataKey={calorieView === 'daily' ? 'date' : 'week'} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{ background: '#2a2a3e', border: '1px solid #363650', borderRadius: '12px', color: '#f1f5f9' }}
+                  cursor={{ fill: 'rgba(249, 115, 22, 0.1)' }}
+                />
+                <Bar dataKey="calories" fill="url(#calorieGradient)" radius={[6, 6, 0, 0]} />
+                <defs>
+                  <linearGradient id="calorieGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f97316" />
+                    <stop offset="100%" stopColor="#ea580c" />
                   </linearGradient>
                 </defs>
               </BarChart>
@@ -225,6 +357,168 @@ export default function Progress() {
           <p className="text-5xl mb-4">📊</p>
           <h3 className="text-xl font-bold text-text-primary">No data yet</h3>
           <p className="text-text-secondary mt-2">Complete workouts and log them to see your progress here.</p>
+        </div>
+      )}
+
+      {/* Weight Tracker */}
+      {showWeightTracker && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Scale className="w-5 h-5 text-rose-400" />
+            <h3 className="text-lg font-bold text-text-primary">Weight Tracker</h3>
+          </div>
+
+          {/* Weight Goal */}
+          {weightGoal ? (
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-text-primary">
+                  Goal: {goalType === 'lose' ? 'Lose' : goalType === 'gain' ? 'Gain' : 'Maintain'} weight
+                </p>
+                <button onClick={() => dispatch({ type: 'SET_WEIGHT_GOAL', payload: null })} className="text-xs text-text-muted hover:text-danger">
+                  Clear
+                </button>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-text-primary">{targetWeightDisplay}</span>
+                <span className="text-sm text-text-muted">{weightUnit}</span>
+              </div>
+              {weightData.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs text-text-muted mb-1">
+                    <span>Current: {weightData[weightData.length - 1].weight} {weightUnit}</span>
+                    <span>Target: {targetWeightDisplay} {weightUnit}</span>
+                  </div>
+                  <div className="w-full h-2 bg-surface-lighter rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, Math.max(5, weightData.length > 0
+                          ? Math.abs(1 - (weightData[weightData.length - 1].weight - targetWeightDisplay) / (weightData[0].weight - targetWeightDisplay || 1)) * 100
+                          : 0))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-4">
+              {!showGoalForm ? (
+                <button onClick={() => setShowGoalForm(true)} className="w-full text-sm text-primary-light hover:text-primary font-medium">
+                  + Set a weight goal
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    {['lose', 'gain', 'maintain'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setGoalType(t)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition-all ${
+                          goalType === t ? 'bg-primary text-white' : 'bg-surface-lighter text-text-muted'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder={`Target (${weightUnit})`}
+                      value={goalWeight}
+                      onChange={e => setGoalWeight(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
+                    />
+                    <button onClick={handleSetGoal} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium">
+                      Set
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Weight Entry Form */}
+          <div className="bg-surface rounded-2xl border border-surface-lighter p-4">
+            <p className="text-sm font-medium text-text-primary mb-3">Log Weight</p>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={weightDate}
+                onChange={e => setWeightDate(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
+              />
+              <div className="flex items-center gap-1 flex-1">
+                <input
+                  type="number"
+                  placeholder={weightUnit === 'kg' ? '70' : '154'}
+                  value={weightInput}
+                  onChange={e => setWeightInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
+                />
+                <span className="text-xs text-text-muted shrink-0">{weightUnit}</span>
+              </div>
+              <button
+                onClick={handleAddWeight}
+                disabled={!weightInput}
+                className="px-3 py-2 rounded-xl bg-primary text-white disabled:opacity-40 transition-opacity"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Weight Chart */}
+          {weightData.length > 1 && (
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+              <h3 className="text-lg font-bold text-text-primary mb-4">Weight Journey</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={weightData}>
+                  <defs>
+                    <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis domain={['dataMin - 2', 'dataMax + 2']} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ background: '#2a2a3e', border: '1px solid #363650', borderRadius: '12px', color: '#f1f5f9' }}
+                    formatter={(value) => [`${value} ${weightUnit}`, 'Weight']}
+                  />
+                  {targetWeightDisplay && (
+                    <ReferenceLine y={targetWeightDisplay} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: 'Goal', fill: '#f59e0b', fontSize: 11 }} />
+                  )}
+                  <Area type="monotone" dataKey="weight" stroke="#f43f5e" fill="url(#weightGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Weight log entries */}
+          {weightData.length > 0 && (
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-4">
+              <p className="text-sm font-medium text-text-primary mb-3">Recent Entries</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {[...weightData].reverse().slice(0, 10).map(entry => (
+                  <div key={entry.fullDate} className="flex items-center justify-between py-1.5 border-b border-surface-lighter last:border-0">
+                    <span className="text-sm text-text-secondary">{entry.fullDate}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-text-primary">{entry.weight} {weightUnit}</span>
+                      <button
+                        onClick={() => dispatch({ type: 'DELETE_WEIGHT_ENTRY', payload: { date: entry.fullDate } })}
+                        className="text-text-muted hover:text-danger transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
