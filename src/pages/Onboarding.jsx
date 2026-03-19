@@ -182,8 +182,10 @@ export default function Onboarding() {
                     { id: 'female', label: 'Female', desc: 'Optimized for female physiology', gradient: 'from-pink-500 to-rose-600',
                       icon: (
                         <svg viewBox="0 0 64 64" className="w-10 h-10" fill="white">
-                          <circle cx="32" cy="14" r="8" />
-                          <path d="M24 28h16a3 3 0 013 3v5l-4 12h-3v14a2 2 0 01-2 2h-4a2 2 0 01-2-2V48h-2v14a2 2 0 01-2 2h-4a2 2 0 01-2-2V48h-3l-4-12v-5a3 3 0 013-3z" />
+                          <circle cx="32" cy="12" r="8" />
+                          <path d="M26 26h12a3 3 0 013 3v4l2 14H21l2-14v-4a3 3 0 013-3z" />
+                          <rect x="26" y="48" width="5" height="12" rx="2" />
+                          <rect x="33" y="48" width="5" height="12" rx="2" />
                         </svg>
                       )
                     },
