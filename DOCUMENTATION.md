@@ -427,3 +427,10 @@ Site verification meta tag is included in `index.html`:
   - Expandable BMI info section with full scale explanation
   - BMI dynamically updates when new weight entries are logged
 - Google site verification meta tag for DNS verification
+
+### v2.0 - Bidirectional Weight Sync
+- **Body Measurements ↔ Weight Tracker sync:**
+  - Updating weight in Body Measurements (Profile) now automatically creates a weight log entry for today
+  - Logging a new weight in Weight Tracker (Progress) now automatically updates the Body Measurements profile weight
+  - BMI recalculates instantly on either change
+  - Profile page body weight field stays in sync when weight is updated from the tracker

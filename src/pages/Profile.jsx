@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, LogOut, RefreshCw, CheckCircle2, Check, Clock, Calendar, Dumbbell, Cloud, CloudUpload, CloudOff, Ruler, Scale } from 'lucide-react'
 import { useApp } from '../context/AppContext'
@@ -31,6 +31,13 @@ export default function Profile() {
   const [bodyWeight, setBodyWeight] = useState(
     profile.weight ? (profile.units?.weight === 'lbs' ? String(kgToLbs(profile.weight)) : String(profile.weight)) : ''
   )
+
+  // Keep body weight in sync when profile.weight changes externally (e.g. from weight tracker)
+  useEffect(() => {
+    if (!showBodyEdit && profile.weight) {
+      setBodyWeight(profile.units?.weight === 'lbs' ? String(kgToLbs(profile.weight)) : String(profile.weight))
+    }
+  }, [profile.weight, showBodyEdit])
 
   const goalConfigs = goals.filter(g => (profile.goals || []).includes(g.id))
   const durationConfig = durationOptions.find(d => d.id === profile.duration)

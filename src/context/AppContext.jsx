@@ -233,7 +233,13 @@ function reducer(state, action) {
     case 'SET_PROFILE': {
       const profile = action.payload
       const workoutPlan = generateWorkoutPlan(profile)
-      return { ...state, profile, workoutPlan }
+      // Sync weight to weight log when body measurement weight changes
+      let weightLog = state.weightLog
+      if (profile.weight && profile.weight !== state.profile?.weight) {
+        const today = new Date().toISOString().split('T')[0]
+        weightLog = { ...state.weightLog, [today]: { weight: profile.weight } }
+      }
+      return { ...state, profile, workoutPlan, weightLog }
     }
     case 'REGENERATE_PLAN': {
       if (!state.profile) return state
@@ -325,7 +331,8 @@ function reducer(state, action) {
     }
     case 'ADD_WEIGHT_ENTRY': {
       const { date, weight } = action.payload
-      return { ...state, weightLog: { ...state.weightLog, [date]: { weight } } }
+      const updatedProfile = state.profile ? { ...state.profile, weight } : state.profile
+      return { ...state, weightLog: { ...state.weightLog, [date]: { weight } }, profile: updatedProfile }
     }
     case 'DELETE_WEIGHT_ENTRY': {
       const { [action.payload.date]: _, ...rest } = state.weightLog
