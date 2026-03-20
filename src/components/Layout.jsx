@@ -25,7 +25,7 @@ export default function Layout({ children }) {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
-                OneFit
+                FitOne
               </h1>
             </div>
           </div>
