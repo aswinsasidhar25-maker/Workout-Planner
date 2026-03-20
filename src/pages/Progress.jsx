@@ -422,7 +422,15 @@ export default function Progress() {
                 </div>
                 <div
                   className="absolute top-0 w-0.5 h-5 bg-white shadow-lg -translate-x-1/2 -mt-1"
-                  style={{ left: `${Math.min(100, Math.max(0, ((Number(bmiData.bmi) - 15) / 25) * 100))}%` }}
+                  style={{ left: `${(() => {
+                    const bmi = Number(bmiData.bmi)
+                    if (bmi <= 15) return 0
+                    if (bmi <= 18.5) return ((bmi - 15) / (18.5 - 15)) * 25
+                    if (bmi <= 25) return 25 + ((bmi - 18.5) / (25 - 18.5)) * 25
+                    if (bmi <= 30) return 50 + ((bmi - 25) / (30 - 25)) * 25
+                    if (bmi <= 40) return 75 + ((bmi - 30) / (40 - 30)) * 25
+                    return 100
+                  })()}%` }}
                 />
               </div>
               <div className="flex justify-between text-[10px] text-text-muted mb-1">
