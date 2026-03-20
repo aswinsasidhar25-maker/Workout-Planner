@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, ReferenceLine } from 'recharts'
-import { TrendingUp, Flame, Dumbbell, Calendar, Award, Target, Scale, Plus, Trash2 } from 'lucide-react'
+import { TrendingUp, Flame, Dumbbell, Calendar, Award, Target, Scale, Plus, Trash2, Info } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { exercises, muscleGroups } from '../data/exercises'
 import { calculateCalories, kgToLbs, lbsToKg, formatWeight } from '../utils/calories'
@@ -20,7 +20,8 @@ export default function Progress() {
   const [goalType, setGoalType] = useState('lose')
   const [showGoalForm, setShowGoalForm] = useState(false)
 
-  const weightUnit = profile?.units?.weight || 'kg'
+  const weightUnit = 'kg'
+  const [showBmiInfo, setShowBmiInfo] = useState(false)
 
   const analytics = useMemo(() => {
     const entries = Object.entries(workoutLog)
@@ -166,32 +167,60 @@ export default function Progress() {
       .map(([date, entry]) => ({
         date: date.slice(5),
         fullDate: date,
-        weight: weightUnit === 'lbs' ? kgToLbs(entry.weight) : entry.weight,
+        weight: entry.weight,
       }))
-  }, [weightLog, weightUnit])
+  }, [weightLog])
+
+  const bmiData = useMemo(() => {
+    const heightM = profile?.height ? profile.height / 100 : null
+    const currentWeight = weightData.length > 0 ? weightData[weightData.length - 1].weight : profile?.weight
+    if (!heightM || !currentWeight) return null
+
+    const bmi = currentWeight / (heightM * heightM)
+    const idealLow = 18.5 * heightM * heightM
+    const idealHigh = 24.9 * heightM * heightM
+
+    let category = ''
+    let color = ''
+    if (bmi < 18.5) { category = 'Underweight'; color = 'text-sky-400' }
+    else if (bmi < 25) { category = 'Normal'; color = 'text-emerald-400' }
+    else if (bmi < 30) { category = 'Overweight'; color = 'text-amber-400' }
+    else { category = 'Obese'; color = 'text-rose-400' }
+
+    return { bmi: bmi.toFixed(1), category, color, idealLow: idealLow.toFixed(1), idealHigh: idealHigh.toFixed(1), currentWeight }
+  }, [weightData, profile?.height, profile?.weight])
+
+  const weightStats = useMemo(() => {
+    if (!weightGoal || weightData.length === 0) return null
+    const current = weightData[weightData.length - 1].weight
+    const target = weightGoal.targetWeight
+    const start = weightData[0].weight
+    const toShed = current - target
+    const totalToShed = start - target
+    const pctToShed = current > 0 ? ((Math.abs(toShed) / current) * 100).toFixed(1) : 0
+    const progress = totalToShed !== 0 ? Math.min(100, Math.max(0, ((start - current) / totalToShed) * 100)) : 0
+    return { current, target, toShed, pctToShed, progress: progress.toFixed(0) }
+  }, [weightData, weightGoal])
 
   const hasData = analytics.totalWorkouts > 0
 
+  const todayStr = new Date().toISOString().split('T')[0]
+
   const handleAddWeight = () => {
     if (!weightInput) return
-    let wKg = Number(weightInput)
-    if (weightUnit === 'lbs') wKg = lbsToKg(wKg)
-    dispatch({ type: 'ADD_WEIGHT_ENTRY', payload: { date: weightDate, weight: wKg } })
+    if (weightDate > todayStr) return
+    dispatch({ type: 'ADD_WEIGHT_ENTRY', payload: { date: weightDate, weight: Number(weightInput) } })
     setWeightInput('')
   }
 
   const handleSetGoal = () => {
     if (!goalWeight) return
-    let targetKg = Number(goalWeight)
-    if (weightUnit === 'lbs') targetKg = lbsToKg(targetKg)
-    dispatch({ type: 'SET_WEIGHT_GOAL', payload: { targetWeight: targetKg, type: goalType } })
+    dispatch({ type: 'SET_WEIGHT_GOAL', payload: { targetWeight: Number(goalWeight), type: goalType } })
     setShowGoalForm(false)
     setGoalWeight('')
   }
 
-  const targetWeightDisplay = weightGoal
-    ? (weightUnit === 'lbs' ? kgToLbs(weightGoal.targetWeight) : weightGoal.targetWeight)
-    : null
+  const targetWeightDisplay = weightGoal ? weightGoal.targetWeight : null
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -368,38 +397,125 @@ export default function Progress() {
             <h3 className="text-lg font-bold text-text-primary">Weight Tracker</h3>
           </div>
 
+          {/* BMI Card */}
+          {bmiData && (
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-text-primary">Body Mass Index (BMI)</h4>
+                <button onClick={() => setShowBmiInfo(!showBmiInfo)} className="text-text-muted hover:text-text-secondary">
+                  <Info className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-baseline gap-3 mb-3">
+                <span className="text-4xl font-black text-text-primary">{bmiData.bmi}</span>
+                <span className={`text-sm font-semibold ${bmiData.color}`}>{bmiData.category}</span>
+              </div>
+
+              {/* BMI Scale Bar */}
+              <div className="relative mb-2">
+                <div className="flex h-3 rounded-full overflow-hidden">
+                  <div className="flex-1 bg-sky-400" />
+                  <div className="flex-1 bg-emerald-400" />
+                  <div className="flex-1 bg-amber-400" />
+                  <div className="flex-1 bg-rose-400" />
+                </div>
+                <div
+                  className="absolute top-0 w-0.5 h-5 bg-white shadow-lg -translate-x-1/2 -mt-1"
+                  style={{ left: `${Math.min(100, Math.max(0, ((Number(bmiData.bmi) - 15) / 25) * 100))}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-text-muted mb-1">
+                <span>15</span>
+                <span>18.5</span>
+                <span>25</span>
+                <span>30</span>
+                <span>40</span>
+              </div>
+              <div className="flex justify-between text-[10px] text-text-muted">
+                <span className="text-sky-400">Under</span>
+                <span className="text-emerald-400">Normal</span>
+                <span className="text-amber-400">Over</span>
+                <span className="text-rose-400">Obese</span>
+              </div>
+
+              {showBmiInfo && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="mt-4 pt-4 border-t border-surface-lighter space-y-2"
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider">Current Weight</p>
+                      <p className="text-lg font-bold text-text-primary">{bmiData.currentWeight} kg</p>
+                    </div>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider">Ideal Weight Range</p>
+                      <p className="text-lg font-bold text-emerald-400">{bmiData.idealLow} – {bmiData.idealHigh} kg</p>
+                    </div>
+                  </div>
+                  <div className="bg-surface-light rounded-xl p-3">
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      <span className="font-medium text-text-primary">BMI Scale:</span>{' '}
+                      <span className="text-sky-400">Underweight (&lt;18.5)</span> · {' '}
+                      <span className="text-emerald-400">Normal (18.5–24.9)</span> · {' '}
+                      <span className="text-amber-400">Overweight (25–29.9)</span> · {' '}
+                      <span className="text-rose-400">Obese (≥30)</span>
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
           {/* Weight Goal */}
           {weightGoal ? (
-            <div className="bg-surface rounded-2xl border border-surface-lighter p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-text-primary">
-                  Goal: {goalType === 'lose' ? 'Lose' : goalType === 'gain' ? 'Gain' : 'Maintain'} weight
+            <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-text-primary">
+                  Goal: {weightGoal.type === 'lose' ? 'Lose' : weightGoal.type === 'gain' ? 'Gain' : 'Maintain'} weight
                 </p>
                 <button onClick={() => dispatch({ type: 'SET_WEIGHT_GOAL', payload: null })} className="text-xs text-text-muted hover:text-danger">
                   Clear
                 </button>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-text-primary">{targetWeightDisplay}</span>
-                <span className="text-sm text-text-muted">{weightUnit}</span>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-3xl font-black text-text-primary">{targetWeightDisplay}</span>
+                <span className="text-sm text-text-muted">kg</span>
               </div>
-              {weightData.length > 0 && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-text-muted mb-1">
-                    <span>Current: {weightData[weightData.length - 1].weight} {weightUnit}</span>
-                    <span>Target: {targetWeightDisplay} {weightUnit}</span>
+              {weightStats && (
+                <>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-surface-light rounded-xl p-3 text-center">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider">Current</p>
+                      <p className="text-lg font-bold text-text-primary">{weightStats.current} <span className="text-xs text-text-muted">kg</span></p>
+                    </div>
+                    <div className="bg-surface-light rounded-xl p-3 text-center">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider">Remaining</p>
+                      <p className={`text-lg font-bold ${weightStats.toShed > 0 ? 'text-rose-400' : weightStats.toShed < 0 ? 'text-emerald-400' : 'text-emerald-400'}`}>
+                        {Math.abs(weightStats.toShed).toFixed(1)} <span className="text-xs text-text-muted">kg</span>
+                      </p>
+                    </div>
+                    <div className="bg-surface-light rounded-xl p-3 text-center">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider">% to Shed</p>
+                      <p className="text-lg font-bold text-amber-400">{weightStats.pctToShed}<span className="text-xs">%</span></p>
+                    </div>
                   </div>
-                  <div className="w-full h-2 bg-surface-lighter rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(100, Math.max(5, weightData.length > 0
-                          ? Math.abs(1 - (weightData[weightData.length - 1].weight - targetWeightDisplay) / (weightData[0].weight - targetWeightDisplay || 1)) * 100
-                          : 0))}%`
-                      }}
-                    />
+                  <div>
+                    <div className="flex justify-between text-xs text-text-muted mb-1.5">
+                      <span>Progress</span>
+                      <span>{weightStats.progress}%</span>
+                    </div>
+                    <div className="w-full h-3 bg-surface-lighter rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(2, weightStats.progress)}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                      />
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           ) : (
@@ -426,7 +542,7 @@ export default function Progress() {
                   <div className="flex gap-2">
                     <input
                       type="number"
-                      placeholder={`Target (${weightUnit})`}
+                      placeholder="Target (kg)"
                       value={goalWeight}
                       onChange={e => setGoalWeight(e.target.value)}
                       className="flex-1 px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
@@ -447,22 +563,23 @@ export default function Progress() {
               <input
                 type="date"
                 value={weightDate}
+                max={todayStr}
                 onChange={e => setWeightDate(e.target.value)}
                 className="px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
               />
               <div className="flex items-center gap-1 flex-1">
                 <input
                   type="number"
-                  placeholder={weightUnit === 'kg' ? '70' : '154'}
+                  placeholder="70"
                   value={weightInput}
                   onChange={e => setWeightInput(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-sm focus:outline-none focus:border-primary"
                 />
-                <span className="text-xs text-text-muted shrink-0">{weightUnit}</span>
+                <span className="text-xs text-text-muted shrink-0">kg</span>
               </div>
               <button
                 onClick={handleAddWeight}
-                disabled={!weightInput}
+                disabled={!weightInput || weightDate > todayStr}
                 className="px-3 py-2 rounded-xl bg-primary text-white disabled:opacity-40 transition-opacity"
               >
                 <Plus className="w-4 h-4" />
@@ -474,7 +591,7 @@ export default function Progress() {
           {weightData.length > 1 && (
             <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
               <h3 className="text-lg font-bold text-text-primary mb-4">Weight Journey</h3>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={weightData}>
                   <defs>
                     <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
@@ -483,15 +600,21 @@ export default function Progress() {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <YAxis domain={['dataMin - 2', 'dataMax + 2']} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis domain={['dataMin - 3', 'dataMax + 3']} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{ background: '#2a2a3e', border: '1px solid #363650', borderRadius: '12px', color: '#f1f5f9' }}
-                    formatter={(value) => [`${value} ${weightUnit}`, 'Weight']}
+                    formatter={(value) => [`${value} kg`, 'Weight']}
                   />
                   {targetWeightDisplay && (
-                    <ReferenceLine y={targetWeightDisplay} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: 'Goal', fill: '#f59e0b', fontSize: 11 }} />
+                    <ReferenceLine
+                      y={targetWeightDisplay}
+                      stroke="#f59e0b"
+                      strokeDasharray="6 4"
+                      strokeWidth={2}
+                      label={{ value: `Target: ${targetWeightDisplay} kg`, fill: '#f59e0b', fontSize: 11, position: 'right' }}
+                    />
                   )}
-                  <Area type="monotone" dataKey="weight" stroke="#f43f5e" fill="url(#weightGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="weight" stroke="#f43f5e" fill="url(#weightGrad)" strokeWidth={2} dot={{ r: 3, fill: '#f43f5e' }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -506,7 +629,7 @@ export default function Progress() {
                   <div key={entry.fullDate} className="flex items-center justify-between py-1.5 border-b border-surface-lighter last:border-0">
                     <span className="text-sm text-text-secondary">{entry.fullDate}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-text-primary">{entry.weight} {weightUnit}</span>
+                      <span className="text-sm font-medium text-text-primary">{entry.weight} kg</span>
                       <button
                         onClick={() => dispatch({ type: 'DELETE_WEIGHT_ENTRY', payload: { date: entry.fullDate } })}
                         className="text-text-muted hover:text-danger transition-colors"
