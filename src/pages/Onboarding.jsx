@@ -218,26 +218,6 @@ export default function Onboarding() {
                   <p className="text-text-secondary mt-2">Helps us calculate accurate calorie burn</p>
                 </div>
 
-                {/* Unit toggle */}
-                <div className="flex bg-surface-lighter rounded-xl p-1 max-w-xs mx-auto">
-                  <button
-                    onClick={() => setProfile(p => ({ ...p, units: { height: 'cm', weight: 'kg' } }))}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      profile.units.weight === 'kg' ? 'bg-primary text-white shadow' : 'text-text-muted'
-                    }`}
-                  >
-                    Metric
-                  </button>
-                  <button
-                    onClick={() => setProfile(p => ({ ...p, units: { height: 'ft', weight: 'lbs' } }))}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      profile.units.weight === 'lbs' ? 'bg-primary text-white shadow' : 'text-text-muted'
-                    }`}
-                  >
-                    Imperial
-                  </button>
-                </div>
-
                 {/* Height input */}
                 <div className="bg-surface rounded-2xl border border-surface-lighter p-5">
                   <div className="flex items-center gap-3 mb-3">
@@ -247,37 +227,16 @@ export default function Onboarding() {
                     <span className="font-bold text-text-primary">Height</span>
                     <span className="text-xs text-text-muted ml-auto">Optional</span>
                   </div>
-                  {profile.units.height === 'cm' ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        placeholder="170"
-                        value={profile.height}
-                        onChange={e => setProfile(p => ({ ...p, height: e.target.value }))}
-                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                      />
-                      <span className="text-sm text-text-muted w-8">cm</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        placeholder="5"
-                        value={heightFt}
-                        onChange={e => setHeightFt(e.target.value)}
-                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                      />
-                      <span className="text-sm text-text-muted w-4">ft</span>
-                      <input
-                        type="number"
-                        placeholder="10"
-                        value={heightIn}
-                        onChange={e => setHeightIn(e.target.value)}
-                        className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                      />
-                      <span className="text-sm text-text-muted w-4">in</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="170"
+                      value={profile.height}
+                      onChange={e => setProfile(p => ({ ...p, height: e.target.value }))}
+                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                    />
+                    <span className="text-sm text-text-muted w-8">cm</span>
+                  </div>
                 </div>
 
                 {/* Weight input */}
@@ -292,12 +251,12 @@ export default function Onboarding() {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      placeholder={profile.units.weight === 'kg' ? '70' : '154'}
+                      placeholder="70"
                       value={profile.weight}
                       onChange={e => setProfile(p => ({ ...p, weight: e.target.value }))}
                       className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary text-center font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
                     />
-                    <span className="text-sm text-text-muted w-8">{profile.units.weight}</span>
+                    <span className="text-sm text-text-muted w-8">kg</span>
                   </div>
                 </div>
 

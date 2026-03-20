@@ -193,62 +193,27 @@ export default function Profile() {
             className="overflow-hidden border-t border-surface-lighter"
           >
             <div className="p-4 space-y-4">
-              {/* Unit toggle */}
-              <div className="flex bg-surface-lighter rounded-xl p-1">
-                <button
-                  onClick={() => setBodyUnits({ height: 'cm', weight: 'kg' })}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                    bodyUnits.weight === 'kg' ? 'bg-primary text-white shadow' : 'text-text-muted'
-                  }`}
-                >
-                  Metric
-                </button>
-                <button
-                  onClick={() => setBodyUnits({ height: 'ft', weight: 'lbs' })}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                    bodyUnits.weight === 'lbs' ? 'bg-primary text-white shadow' : 'text-text-muted'
-                  }`}
-                >
-                  Imperial
-                </button>
-              </div>
-
               {/* Height */}
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Height</label>
-                {bodyUnits.height === 'cm' ? (
-                  <div className="flex items-center gap-2">
-                    <input type="number" placeholder="170" value={bodyHeight}
-                      onChange={e => setBodyHeight(e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                    />
-                    <span className="text-sm text-text-muted w-8">cm</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input type="number" placeholder="5" value={bodyHeightFt}
-                      onChange={e => setBodyHeightFt(e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                    />
-                    <span className="text-sm text-text-muted">ft</span>
-                    <input type="number" placeholder="10" value={bodyHeightIn}
-                      onChange={e => setBodyHeightIn(e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
-                    />
-                    <span className="text-sm text-text-muted">in</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <input type="number" placeholder="170" value={bodyHeight}
+                    onChange={e => setBodyHeight(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
+                  />
+                  <span className="text-sm text-text-muted w-8">cm</span>
+                </div>
               </div>
 
               {/* Weight */}
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Weight</label>
                 <div className="flex items-center gap-2">
-                  <input type="number" placeholder={bodyUnits.weight === 'kg' ? '70' : '154'} value={bodyWeight}
+                  <input type="number" placeholder="70" value={bodyWeight}
                     onChange={e => setBodyWeight(e.target.value)}
                     className="flex-1 px-4 py-3 rounded-xl bg-surface-light border border-surface-lighter text-text-primary font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder-text-muted"
                   />
-                  <span className="text-sm text-text-muted w-8">{bodyUnits.weight}</span>
+                  <span className="text-sm text-text-muted w-8">kg</span>
                 </div>
               </div>
 
