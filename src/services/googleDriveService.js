@@ -1,6 +1,6 @@
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
-const FILE_NAME = 'zenfit-data.json'
+const FILE_NAME = 'onefit-data.json'
 
 async function driveRequest(url, options) {
   const res = await fetch(url, options)
@@ -40,7 +40,7 @@ export async function createFile(accessToken, data) {
     parents: ['appDataFolder'],
   }
 
-  const boundary = '---zenfit_boundary_' + Date.now()
+  const boundary = '---onefit_boundary_' + Date.now()
   const body =
     `--${boundary}\r\n` +
     'Content-Type: application/json; charset=UTF-8\r\n\r\n' +

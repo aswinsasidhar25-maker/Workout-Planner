@@ -52,11 +52,18 @@ function checkBadges(state) {
 }
 
 const getInitialState = () => {
-  let saved = localStorage.getItem('zenfit-state')
+  let saved = localStorage.getItem('onefit-state')
+  if (!saved) {
+    saved = localStorage.getItem('zenfit-state')
+    if (saved) {
+      localStorage.setItem('onefit-state', saved)
+      localStorage.removeItem('zenfit-state')
+    }
+  }
   if (!saved) {
     saved = localStorage.getItem('fitforge-state')
     if (saved) {
-      localStorage.setItem('zenfit-state', saved)
+      localStorage.setItem('onefit-state', saved)
       localStorage.removeItem('fitforge-state')
     }
   }
@@ -385,7 +392,7 @@ export function AppProvider({ children }) {
 
   // Save to localStorage on every state change
   useEffect(() => {
-    localStorage.setItem('zenfit-state', JSON.stringify(state))
+    localStorage.setItem('onefit-state', JSON.stringify(state))
   }, [state])
 
   // Load data from Drive when user signs in

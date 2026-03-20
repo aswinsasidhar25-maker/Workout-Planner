@@ -113,7 +113,7 @@ export default function Onboarding() {
                 </motion.div>
                 <div>
                   <h1 className="text-4xl font-black bg-gradient-to-r from-primary-light via-white to-accent bg-clip-text text-transparent">
-                    Welcome to ZenFit
+                    Welcome to OneFit
                   </h1>
                   <p className="text-text-secondary mt-3 text-lg">Your personal workout companion.<br />Let's build your perfect training plan.</p>
                 </div>

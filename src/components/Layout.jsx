@@ -25,9 +25,8 @@ export default function Layout({ children }) {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
-                ZenFit
+                OneFit
               </h1>
-              <p className="text-[10px] text-text-muted uppercase tracking-widest">Balance & Strength</p>
             </div>
           </div>
           <SyncStatusIndicator />

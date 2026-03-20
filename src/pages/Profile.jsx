@@ -66,7 +66,7 @@ export default function Profile() {
 
   const handleReset = () => {
     dispatch({ type: 'RESET_PROFILE' })
-    localStorage.removeItem('zenfit-state')
+    localStorage.removeItem('onefit-state')
     navigate('/')
   }
 
