@@ -97,6 +97,7 @@ export default function Dashboard() {
         <h1 className="text-3xl font-black text-text-primary">
           Hey, {profile.name}!
         </h1>
+        <p className="text-text-secondary mt-1 italic">"The only bad workout is the one that didn't happen."</p>
       </div>
 
       {/* Streak tracker */}
