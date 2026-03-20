@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 const GoogleAuthContext = createContext()
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata'
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid profile email'
 
 export function GoogleAuthProvider({ children }) {
   const [user, setUser] = useState(null)
