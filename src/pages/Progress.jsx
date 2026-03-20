@@ -173,7 +173,8 @@ export default function Progress() {
 
   const bmiData = useMemo(() => {
     const heightM = profile?.height ? profile.height / 100 : null
-    const currentWeight = weightData.length > 0 ? weightData[weightData.length - 1].weight : profile?.weight
+    const latestWeight = weightData.length > 0 ? weightData[weightData.length - 1].weight : null
+    const currentWeight = latestWeight || profile?.weight
     if (!heightM || !currentWeight) return null
 
     const bmi = currentWeight / (heightM * heightM)
@@ -188,7 +189,7 @@ export default function Progress() {
     else { category = 'Obese'; color = 'text-rose-400' }
 
     return { bmi: bmi.toFixed(1), category, color, idealLow: idealLow.toFixed(1), idealHigh: idealHigh.toFixed(1), currentWeight }
-  }, [weightData, profile?.height, profile?.weight])
+  }, [weightLog, weightData, profile?.height, profile?.weight])
 
   const weightStats = useMemo(() => {
     if (!weightGoal || weightData.length === 0) return null
@@ -200,7 +201,7 @@ export default function Progress() {
     const pctToShed = current > 0 ? ((Math.abs(toShed) / current) * 100).toFixed(1) : 0
     const progress = totalToShed !== 0 ? Math.min(100, Math.max(0, ((start - current) / totalToShed) * 100)) : 0
     return { current, target, toShed, pctToShed, progress: progress.toFixed(0) }
-  }, [weightData, weightGoal])
+  }, [weightLog, weightData, weightGoal])
 
   const hasData = analytics.totalWorkouts > 0
 
