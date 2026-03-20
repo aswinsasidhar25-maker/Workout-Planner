@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Flame, Target, TrendingUp, Calendar, ChevronRight, Dumbbell, Clock, Zap, Award, X, Trophy, Star, Medal } from 'lucide-react'
@@ -6,8 +6,22 @@ import { useApp } from '../context/AppContext'
 import { goals, weekDays, exercises, durationOptions, badgeDefinitions } from '../data/exercises'
 import { calculateCalories } from '../utils/calories'
 
+const motivationalQuotes = [
+  "The only bad workout is the one that didn't happen.",
+  "Push yourself, because no one else is going to do it for you.",
+  "Success starts with self-discipline.",
+  "Your body can stand almost anything. It's your mind you have to convince.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "The pain you feel today will be the strength you feel tomorrow.",
+  "It never gets easier. You just get stronger.",
+  "Fall in love with taking care of yourself.",
+  "One workout at a time. One rep at a time. One step at a time.",
+  "Discipline is choosing between what you want now and what you want most.",
+]
+
 export default function Dashboard() {
   const { state, dispatch } = useApp()
+  const [quote] = useState(() => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)])
   const { profile, workoutPlan, workoutLog } = state
 
   const today = weekDays[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]
@@ -97,7 +111,7 @@ export default function Dashboard() {
         <h1 className="text-3xl font-black text-text-primary">
           Hey, {profile.name}!
         </h1>
-        <p className="text-text-secondary mt-1 italic">"The only bad workout is the one that didn't happen."</p>
+        <p className="text-text-secondary mt-1 italic">"{quote}"</p>
       </div>
 
       {/* Streak tracker */}
