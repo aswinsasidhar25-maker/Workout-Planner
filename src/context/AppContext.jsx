@@ -500,3 +500,6 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }
+
+// Test-only exports
+export { reducer as _reducer, generateWorkoutPlan as _generateWorkoutPlan }
