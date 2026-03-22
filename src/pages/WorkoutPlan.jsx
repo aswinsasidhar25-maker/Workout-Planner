@@ -29,6 +29,7 @@ export default function WorkoutPlan() {
           sets: ex.sets,
           reps: ex.reps,
           weight: ex.weight,
+          weights: ex.weights || Array(ex.sets).fill(ex.weight || 0),
           completedSets: ex.completed.filter(Boolean).length,
         })),
       },

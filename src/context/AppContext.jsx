@@ -205,6 +205,7 @@ function generateWorkoutPlan(profile) {
           sets,
           reps,
           weight: 0,
+          weights: Array(sets).fill(0),
           rest: avgRest,
           completed: Array(sets).fill(false),
         })
@@ -301,6 +302,7 @@ function reducer(state, action) {
         sets,
         reps,
         weight: 0,
+        weights: Array(sets).fill(0),
         rest: p.rest,
         completed: Array(sets).fill(false),
       }
@@ -317,11 +319,50 @@ function reducer(state, action) {
         sets,
         reps: p.repsLow,
         weight: 0,
+        weights: Array(sets).fill(0),
         rest: p.rest,
         completed: Array(sets).fill(false),
       }]
       dayPlanAdd.isRest = false
       return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dayPlanAdd } }
+    }
+    case 'ADD_SET': {
+      const { day, exerciseIndex } = action.payload
+      const dpAdd = { ...state.workoutPlan[day] }
+      const exListAdd = [...dpAdd.exercises]
+      const exAdd = { ...exListAdd[exerciseIndex] }
+      exAdd.sets = exAdd.sets + 1
+      exAdd.completed = [...exAdd.completed, false]
+      exAdd.weights = [...(exAdd.weights || Array(exAdd.sets - 1).fill(0)), 0]
+      exListAdd[exerciseIndex] = exAdd
+      dpAdd.exercises = exListAdd
+      return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dpAdd } }
+    }
+    case 'REMOVE_SET': {
+      const { day, exerciseIndex } = action.payload
+      const dpRm = { ...state.workoutPlan[day] }
+      const exListRm = [...dpRm.exercises]
+      const exRm = { ...exListRm[exerciseIndex] }
+      if (exRm.sets <= 1) return state
+      exRm.sets = exRm.sets - 1
+      exRm.completed = exRm.completed.slice(0, exRm.sets)
+      exRm.weights = (exRm.weights || []).slice(0, exRm.sets)
+      exListRm[exerciseIndex] = exRm
+      dpRm.exercises = exListRm
+      return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dpRm } }
+    }
+    case 'SET_WEIGHT_FOR_SET': {
+      const { day, exerciseIndex, setIndex, weight } = action.payload
+      const dpW = { ...state.workoutPlan[day] }
+      const exListW = [...dpW.exercises]
+      const exW = { ...exListW[exerciseIndex] }
+      const weights = [...(exW.weights || Array(exW.sets).fill(exW.weight || 0))]
+      weights[setIndex] = weight
+      exW.weights = weights
+      exW.weight = weights[0]
+      exListW[exerciseIndex] = exW
+      dpW.exercises = exListW
+      return { ...state, workoutPlan: { ...state.workoutPlan, [day]: dpW } }
     }
     case 'REMOVE_EXERCISE_FROM_DAY': {
       const { day, exerciseIndex: removeIdx } = action.payload

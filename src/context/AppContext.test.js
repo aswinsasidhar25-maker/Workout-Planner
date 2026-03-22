@@ -193,6 +193,119 @@ describe('Reducer — Existing Feature Sanity', () => {
 })
 
 // ───────────────────────────────────────────────────────────────────
+// Per-set weights and configurable sets
+// ───────────────────────────────────────────────────────────────────
+
+describe('Reducer — Per-Set Weights and Configurable Sets', () => {
+  let state
+
+  beforeEach(() => {
+    state = makeState()
+    const plan = generateWorkoutPlan(state.profile)
+    state.workoutPlan = plan
+  })
+
+  it('generated exercises have a weights array matching sets count', () => {
+    const day = 'Monday'
+    const ex = state.workoutPlan[day].exercises[0]
+    expect(Array.isArray(ex.weights)).toBe(true)
+    expect(ex.weights.length).toBe(ex.sets)
+    expect(ex.weights.every(w => w === 0)).toBe(true)
+  })
+
+  it('ADD_SET increases sets count by 1', () => {
+    const day = 'Monday'
+    const originalSets = state.workoutPlan[day].exercises[0].sets
+    const result = reducer(state, {
+      type: 'ADD_SET',
+      payload: { day, exerciseIndex: 0 },
+    })
+    const ex = result.workoutPlan[day].exercises[0]
+    expect(ex.sets).toBe(originalSets + 1)
+    expect(ex.completed.length).toBe(originalSets + 1)
+    expect(ex.weights.length).toBe(originalSets + 1)
+    expect(ex.completed[originalSets]).toBe(false)
+    expect(ex.weights[originalSets]).toBe(0)
+  })
+
+  it('REMOVE_SET decreases sets count by 1', () => {
+    const day = 'Monday'
+    const originalSets = state.workoutPlan[day].exercises[0].sets
+    const result = reducer(state, {
+      type: 'REMOVE_SET',
+      payload: { day, exerciseIndex: 0 },
+    })
+    const ex = result.workoutPlan[day].exercises[0]
+    expect(ex.sets).toBe(originalSets - 1)
+    expect(ex.completed.length).toBe(originalSets - 1)
+    expect(ex.weights.length).toBe(originalSets - 1)
+  })
+
+  it('REMOVE_SET does not go below 1 set', () => {
+    const day = 'Monday'
+    // Reduce to 1 set first
+    let result = state
+    const originalSets = result.workoutPlan[day].exercises[0].sets
+    for (let i = 0; i < originalSets - 1; i++) {
+      result = reducer(result, { type: 'REMOVE_SET', payload: { day, exerciseIndex: 0 } })
+    }
+    expect(result.workoutPlan[day].exercises[0].sets).toBe(1)
+    // Try removing again — should stay at 1
+    const noChange = reducer(result, { type: 'REMOVE_SET', payload: { day, exerciseIndex: 0 } })
+    expect(noChange.workoutPlan[day].exercises[0].sets).toBe(1)
+  })
+
+  it('SET_WEIGHT_FOR_SET sets weight for a specific set', () => {
+    const day = 'Monday'
+    const result = reducer(state, {
+      type: 'SET_WEIGHT_FOR_SET',
+      payload: { day, exerciseIndex: 0, setIndex: 0, weight: 50 },
+    })
+    expect(result.workoutPlan[day].exercises[0].weights[0]).toBe(50)
+    // Other sets remain 0
+    expect(result.workoutPlan[day].exercises[0].weights[1]).toBe(0)
+  })
+
+  it('SET_WEIGHT_FOR_SET allows different weights per set', () => {
+    const day = 'Monday'
+    let result = reducer(state, {
+      type: 'SET_WEIGHT_FOR_SET',
+      payload: { day, exerciseIndex: 0, setIndex: 0, weight: 40 },
+    })
+    result = reducer(result, {
+      type: 'SET_WEIGHT_FOR_SET',
+      payload: { day, exerciseIndex: 0, setIndex: 1, weight: 45 },
+    })
+    expect(result.workoutPlan[day].exercises[0].weights[0]).toBe(40)
+    expect(result.workoutPlan[day].exercises[0].weights[1]).toBe(45)
+  })
+
+  it('ADD_EXERCISE_TO_DAY creates exercise with weights array', () => {
+    const day = 'Tuesday' // rest day
+    const result = reducer(state, {
+      type: 'ADD_EXERCISE_TO_DAY',
+      payload: { day, exerciseId: 'bench-press' },
+    })
+    const ex = result.workoutPlan[day].exercises[0]
+    expect(Array.isArray(ex.weights)).toBe(true)
+    expect(ex.weights.length).toBe(ex.sets)
+  })
+
+  it('REPLACE_EXERCISE creates exercise with weights array', () => {
+    const day = 'Monday'
+    const originalId = state.workoutPlan[day].exercises[0].exerciseId
+    const replacementId = originalId === 'push-ups' ? 'cable-flyes' : 'push-ups'
+    const result = reducer(state, {
+      type: 'REPLACE_EXERCISE',
+      payload: { day, exerciseIndex: 0, newExerciseId: replacementId },
+    })
+    const ex = result.workoutPlan[day].exercises[0]
+    expect(Array.isArray(ex.weights)).toBe(true)
+    expect(ex.weights.length).toBe(ex.sets)
+  })
+})
+
+// ───────────────────────────────────────────────────────────────────
 // Rigorous tests for bidirectional weight sync (new feature)
 // ───────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronUp, Trash2, Info, Check, Minus, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2, Info, Check, Minus, Plus, Weight } from 'lucide-react'
 import { exercises, muscleGroups } from '../data/exercises'
 import { getExerciseImage } from '../data/exerciseImages'
 import { useApp } from '../context/AppContext'
@@ -8,6 +8,8 @@ import { useApp } from '../context/AppContext'
 export default function ExerciseCard({ planExercise, day, exerciseIndex, readonly = false }) {
   const { dispatch } = useApp()
   const [expanded, setExpanded] = useState(false)
+  const [editingSetWeight, setEditingSetWeight] = useState(null)
+  const [weightInput, setWeightInput] = useState('')
 
   const exercise = exercises.find(e => e.id === planExercise.exerciseId)
   if (!exercise) return null
@@ -18,15 +20,46 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
   const totalSets = planExercise.sets
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0
 
+  // Get per-set weights, falling back to legacy single weight
+  const weights = planExercise.weights || Array(totalSets).fill(planExercise.weight || 0)
+
   const handleSetToggle = (setIndex) => {
     if (readonly) return
     dispatch({ type: 'TOGGLE_SET_COMPLETE', payload: { day, exerciseIndex, setIndex } })
   }
 
-  const handleWeightChange = (delta) => {
+  const handleSetWeightClick = (setIndex, e) => {
+    e.stopPropagation()
     if (readonly) return
-    const newWeight = Math.max(0, (planExercise.weight || 0) + delta)
-    dispatch({ type: 'UPDATE_EXERCISE_IN_PLAN', payload: { day, exerciseIndex, updates: { weight: newWeight } } })
+    setEditingSetWeight(setIndex)
+    setWeightInput(String(weights[setIndex] || 0))
+  }
+
+  const handleWeightInputSave = () => {
+    if (editingSetWeight === null) return
+    const w = parseFloat(weightInput) || 0
+    dispatch({
+      type: 'SET_WEIGHT_FOR_SET',
+      payload: { day, exerciseIndex, setIndex: editingSetWeight, weight: Math.max(0, w) },
+    })
+    setEditingSetWeight(null)
+    setWeightInput('')
+  }
+
+  const handleWeightInputKeyDown = (e) => {
+    if (e.key === 'Enter') handleWeightInputSave()
+    if (e.key === 'Escape') { setEditingSetWeight(null); setWeightInput('') }
+  }
+
+  const handleAddSet = (e) => {
+    e.stopPropagation()
+    dispatch({ type: 'ADD_SET', payload: { day, exerciseIndex } })
+  }
+
+  const handleRemoveSet = (e) => {
+    e.stopPropagation()
+    if (totalSets <= 1) return
+    dispatch({ type: 'REMOVE_SET', payload: { day, exerciseIndex } })
   }
 
   const handleRemove = () => {
@@ -110,20 +143,21 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
                 </ul>
               </div>
 
-              {/* Weight control */}
+              {/* Sets count control */}
               {!readonly && (
                 <div className="flex items-center justify-between bg-surface-light rounded-xl p-3">
-                  <span className="text-sm text-text-secondary">Weight (kg)</span>
+                  <span className="text-sm text-text-secondary">Number of Sets</span>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleWeightChange(-2.5) }}
-                      className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+                      onClick={handleRemoveSet}
+                      disabled={totalSets <= 1}
+                      className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="text-lg font-bold text-text-primary w-16 text-center">{planExercise.weight || 0}</span>
+                    <span className="text-lg font-bold text-text-primary w-8 text-center">{totalSets}</span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleWeightChange(2.5) }}
+                      onClick={handleAddSet}
                       className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
                     >
                       <Plus className="w-4 h-4" />
@@ -132,25 +166,102 @@ export default function ExerciseCard({ planExercise, day, exerciseIndex, readonl
                 </div>
               )}
 
-              {/* Sets tracking */}
+              {/* Sets tracking with per-set weights */}
               {!readonly && (
                 <div>
                   <p className="text-xs font-semibold text-text-secondary mb-2">
                     Sets x {planExercise.reps} reps | Rest: {planExercise.rest}s
                   </p>
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
                     {planExercise.completed.map((done, i) => (
-                      <button
+                      <div key={i} className="flex items-center gap-2">
+                        {/* Set complete toggle */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSetToggle(i) }}
+                          className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all duration-200 ${
+                            done
+                              ? 'bg-gradient-to-br from-success to-emerald-600 text-white shadow-lg shadow-success/20'
+                              : 'bg-surface-lighter text-text-muted hover:bg-surface-lighter/80'
+                          }`}
+                        >
+                          {done ? <Check className="w-4 h-4" /> : null}
+                          <span>Set {i + 1}</span>
+                          {weights[i] > 0 && (
+                            <span className={`text-xs font-normal ${done ? 'text-white/80' : 'text-text-muted'}`}>
+                              ({weights[i]} kg)
+                            </span>
+                          )}
+                        </button>
+                        {/* Per-set weight button */}
+                        <button
+                          onClick={(e) => handleSetWeightClick(i, e)}
+                          className="h-12 px-3 rounded-xl bg-surface-lighter text-text-muted hover:text-primary-light hover:bg-primary/10 transition-all flex items-center gap-1.5 shrink-0 text-xs font-medium"
+                        >
+                          <Weight className="w-3.5 h-3.5" />
+                          {weights[i] > 0 ? `${weights[i]}kg` : 'Set wt'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Weight input modal for a specific set */}
+              {editingSetWeight !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-primary/5 border border-primary/20 rounded-xl p-4"
+                >
+                  <p className="text-sm font-semibold text-text-primary mb-3">
+                    Set {editingSetWeight + 1} — Enter Weight (kg)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={weightInput}
+                      onChange={(e) => setWeightInput(e.target.value)}
+                      onKeyDown={handleWeightInputKeyDown}
+                      autoFocus
+                      min="0"
+                      step="0.5"
+                      className="flex-1 h-10 px-3 rounded-lg bg-surface border border-surface-lighter text-text-primary text-center text-lg font-bold focus:outline-none focus:border-primary"
+                      placeholder="0"
+                    />
+                    <button
+                      onClick={handleWeightInputSave}
+                      className="h-10 px-4 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setEditingSetWeight(null); setWeightInput('') }}
+                      className="h-10 px-3 rounded-lg bg-surface-lighter text-text-muted text-sm hover:text-text-primary transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Weight summary */}
+              {!readonly && weights.some(w => w > 0) && editingSetWeight === null && (
+                <div className="bg-surface-light rounded-xl p-3">
+                  <p className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-1">
+                    <Weight className="w-3 h-3" /> Weight Summary
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {weights.map((w, i) => (
+                      <div
                         key={i}
-                        onClick={(e) => { e.stopPropagation(); handleSetToggle(i) }}
-                        className={`flex-1 h-12 rounded-xl flex items-center justify-center font-bold text-sm transition-all duration-200 ${
-                          done
-                            ? 'bg-gradient-to-br from-success to-emerald-600 text-white shadow-lg shadow-success/20'
-                            : 'bg-surface-lighter text-text-muted hover:bg-surface-lighter/80'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          planExercise.completed[i]
+                            ? 'bg-success/10 text-success'
+                            : 'bg-surface-lighter text-text-secondary'
                         }`}
                       >
-                        {done ? <Check className="w-5 h-5" /> : `Set ${i + 1}`}
-                      </button>
+                        Set {i + 1}: {w > 0 ? `${w} kg` : '—'}
+                      </div>
                     ))}
                   </div>
                 </div>
