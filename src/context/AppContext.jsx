@@ -247,6 +247,71 @@ function reducer(state, action) {
       const workoutPlan = generateWorkoutPlan(state.profile)
       return { ...state, workoutPlan }
     }
+    case 'REGENERATE_DAY': {
+      if (!state.profile) return state
+      const { day, slotOverride } = action.payload
+      const { goals: selectedGoals, fitnessLevel, gender, duration } = state.profile
+      if (!selectedGoals || selectedGoals.length === 0) return state
+
+      const durationConfig = durationOptions.find(d => d.id === duration) || durationOptions[2]
+      const maxExercises = durationConfig.exercisesPerSession
+      const goalConfigs = goals.filter(g => selectedGoals.includes(g.id))
+      const avgSets = Math.round(goalConfigs.reduce((s, g) => s + (g.setsRange[0] + g.setsRange[1]) / 2, 0) / goalConfigs.length)
+      const avgRepsLow = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[0], 0) / goalConfigs.length)
+      const avgRepsHigh = Math.round(goalConfigs.reduce((s, g) => s + g.repsRange[1], 0) / goalConfigs.length)
+      const avgRest = Math.round(goalConfigs.reduce((s, g) => s + g.restSeconds, 0) / goalConfigs.length)
+
+      const hasCardioGoal = selectedGoals.includes('lose_weight') || selectedGoals.includes('endurance')
+      let muscles = [...slotOverride.muscles]
+      if (hasCardioGoal && !muscles.includes('cardio')) {
+        muscles.push('cardio')
+      }
+
+      const dayExercises = []
+      const usedIds = new Set()
+      const exercisesPerMuscle = Math.max(1, Math.floor(maxExercises / muscles.length))
+      let remaining = maxExercises
+
+      muscles.forEach(muscleId => {
+        if (remaining <= 0) return
+        const count = Math.min(exercisesPerMuscle, remaining)
+        const available = exercises.filter(ex => {
+          if (ex.muscle !== muscleId) return false
+          if (usedIds.has(ex.id)) return false
+          if (ex.gender !== 'both' && ex.gender !== gender) return false
+          if (fitnessLevel === 'beginner' && ex.difficulty === 'advanced') return false
+          return true
+        })
+        available.sort((a, b) => {
+          const aCompound = a.secondary.length >= 2 ? 1 : 0
+          const bCompound = b.secondary.length >= 2 ? 1 : 0
+          if (bCompound !== aCompound) return bCompound - aCompound
+          const aMatch = a.goals.filter(g => selectedGoals.includes(g)).length
+          const bMatch = b.goals.filter(g => selectedGoals.includes(g)).length
+          if (bMatch !== aMatch) return bMatch - aMatch
+          return Math.random() - 0.5
+        })
+        available.slice(0, count).forEach(ex => {
+          usedIds.add(ex.id)
+          const sets = fitnessLevel === 'beginner' ? Math.max(2, avgSets - 1) : avgSets
+          const reps = avgRepsLow + Math.floor(Math.random() * (avgRepsHigh - avgRepsLow + 1))
+          dayExercises.push({
+            exerciseId: ex.id, sets, reps, weight: 0,
+            weights: Array(sets).fill(0), rest: avgRest,
+            completed: Array(sets).fill(false),
+          })
+          remaining--
+        })
+      })
+
+      return {
+        ...state,
+        workoutPlan: {
+          ...state.workoutPlan,
+          [day]: { name: slotOverride.name, exercises: dayExercises, isRest: false },
+        },
+      }
+    }
     case 'UPDATE_EXERCISE_IN_PLAN': {
       const { day, exerciseIndex, updates } = action.payload
       const dayPlan = { ...state.workoutPlan[day] }

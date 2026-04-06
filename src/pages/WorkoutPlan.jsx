@@ -1,9 +1,24 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Plus, Save, CheckCircle2, Star, Dumbbell, Calendar } from 'lucide-react'
+import { RefreshCw, Plus, Save, CheckCircle2, Star, Dumbbell, Calendar, Repeat } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { weekDays, exercises as allExercises, muscleGroups } from '../data/exercises'
+import { weekDays, exercises as allExercises, muscleGroups, splitTemplates } from '../data/exercises'
 import ExerciseCard from '../components/ExerciseCard'
+
+// Collect all unique workout slots across all split templates
+const allSlotOptions = (() => {
+  const seen = new Set()
+  const slots = []
+  Object.values(splitTemplates).forEach(t => {
+    t.slots.forEach(slot => {
+      if (!seen.has(slot.name)) {
+        seen.add(slot.name)
+        slots.push(slot)
+      }
+    })
+  })
+  return slots
+})()
 
 export default function WorkoutPlan() {
   const { state, dispatch } = useApp()
@@ -14,6 +29,7 @@ export default function WorkoutPlan() {
   const [addFilter, setAddFilter] = useState('')
   const [saved, setSaved] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [showChangeWorkout, setShowChangeWorkout] = useState(false)
 
   const dayPlan = workoutPlan[selectedDay]
 
@@ -106,12 +122,22 @@ export default function WorkoutPlan() {
                 {dayPlan.isRest ? 'Rest and recover' : `${dayPlan.exercises.length} exercises · ${totalSets} total sets`}
               </p>
             </div>
-            {!dayPlan.isRest && totalSets > 0 && (
-              <div className="text-right">
-                <p className="text-2xl font-black text-primary-light">{Math.round((completedSets / totalSets) * 100)}%</p>
-                <p className="text-xs text-text-muted">{completedSets}/{totalSets} sets</p>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {!dayPlan.isRest && (
+                <button
+                  onClick={() => setShowChangeWorkout(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-light border border-surface-lighter text-text-secondary hover:text-primary-light hover:border-primary/30 transition-all text-xs"
+                >
+                  <Repeat className="w-3.5 h-3.5" /> Change
+                </button>
+              )}
+              {!dayPlan.isRest && totalSets > 0 && (
+                <div className="text-right">
+                  <p className="text-2xl font-black text-primary-light">{Math.round((completedSets / totalSets) * 100)}%</p>
+                  <p className="text-xs text-text-muted">{completedSets}/{totalSets} sets</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -219,6 +245,49 @@ export default function WorkoutPlan() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Change workout type modal */}
+      {showChangeWorkout && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-4">
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-surface rounded-2xl border border-surface-lighter w-full max-w-lg max-h-[70vh] overflow-hidden flex flex-col"
+          >
+            <div className="p-5 border-b border-surface-lighter flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-text-primary">Change Workout</h3>
+                <p className="text-xs text-text-muted mt-0.5">Pick a different workout for {selectedDay}</p>
+              </div>
+              <button onClick={() => setShowChangeWorkout(false)} className="text-text-muted hover:text-text-primary text-2xl">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {allSlotOptions.map(slot => (
+                <button
+                  key={slot.name}
+                  onClick={() => {
+                    dispatch({ type: 'REGENERATE_DAY', payload: { day: selectedDay, slotOverride: slot } })
+                    setShowChangeWorkout(false)
+                  }}
+                  className={`w-full p-4 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    dayPlan?.name === slot.name
+                      ? 'bg-primary/10 border-primary/30 text-primary-light'
+                      : 'bg-surface-light border-surface-lighter text-text-secondary hover:border-primary/30'
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary">{slot.name}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{slot.muscles.join(' · ')}</p>
+                  </div>
+                  {dayPlan?.name === slot.name && (
+                    <span className="text-xs bg-primary/20 text-primary-light px-2 py-0.5 rounded-full">Current</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Add exercise modal */}
       {showAddModal && (
